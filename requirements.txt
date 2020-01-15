@@ -1,0 +1,2 @@
+beacontools[scan]
+requests
