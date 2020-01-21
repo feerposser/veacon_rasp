@@ -21,12 +21,13 @@ class BeaconManager:
 
         self.ble_read_time = set_ble_read_time
         self.allowed_beacons = []
+
         if set_allowed_beacons:
             self.allowed_beacons = self.get_beacons_eddy_namespaces()
-        if allowed_beacons:
-            assert isinstance(allowed_beacons, list), "allowed_beacons params must be a list instance"
 
+        if allowed_beacons:
             self.allowed_beacons = allowed_beacons
+            print("allowed_beacons ->", self.allowed_beacons)
 
     def add_allowed_beacon(self, beacon):
         """
@@ -129,6 +130,7 @@ class BeaconManager:
         self.scanned_beacons.clear()
         scanner = BeaconScanner(self.read_callback, packet_filter=[EddystoneUIDFrame])
         scanner.start()
+        print("reading ble for % s" % self.ble_read_time)
         time.sleep(self.ble_read_time)
 
     def beacon_process(self):

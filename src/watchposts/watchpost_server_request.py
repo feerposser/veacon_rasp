@@ -13,7 +13,7 @@ class WatchpostServerRequest(BaseRequest):
         """
         r = requests.get(self.IP_SERVER+'watchpost', headers=self.AUTH)
         if self.is_valid(r):
-            return r
+            return r.json()
         return {}
 
     def get_watchposts_gateway_beacon(self):
@@ -25,5 +25,5 @@ class WatchpostServerRequest(BaseRequest):
                          header=self.AUTH)
 
         if self.is_valid(r):
-            return r
+            return r.json()
         return None

@@ -4,6 +4,11 @@ from .watchpost_server_request import WatchpostServerRequest
 class WatchpostManager:
 
     def __init__(self, set_watchpost=True):
+        """
+        Inicia buscando monitoramentos cadastrados no sistema e cria um dicionário que armazena as informações
+        dos dados que o rasp está monitorando.
+        :param set_watchpost:
+        """
         self.watchposts = {}
         if set_watchpost:
             watchposts = WatchpostServerRequest().get_watchposts()
@@ -32,8 +37,8 @@ class WatchpostManager:
             assert 'id' in watchpost, "'id' não encontrado"
             assert 'rssi' in watchpost, "'rssi' não encontrado"
             assert 'beacon' in watchpost, "'beacon' não encontrado"
-            assert watchpost['beacon']['eddy_namespace'] not in self.watchposts, 'Beacon %s já monitorado' % \
-                                                                                 watchpost['beacon']['eddy_namespace']
+            assert watchpost['beacon']['eddy_namespace'] not in self.watchposts, \
+                'Beacon %s já monitorado' % watchpost['beacon']['eddy_namespace']
 
             self.watchposts[watchpost['beacon']['eddy_namespace']] = {
                 'rssi': watchpost['rssi'],
@@ -48,6 +53,10 @@ class WatchpostManager:
             return
 
     def get_all_listening_watchposts_beacons(self):
+        """
+        Recupera os eddy_namespaces dos monitoramentos (beacons monitorados)
+        :return:
+        """
         return self.watchposts.keys()
 
     def get_listening_watchpost(self, eddy_namespace):
