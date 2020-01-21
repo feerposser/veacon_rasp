@@ -24,6 +24,8 @@ class BeaconManager:
         if set_allowed_beacons:
             self.allowed_beacons = self.get_beacons_eddy_namespaces()
         if allowed_beacons:
+            assert isinstance(allowed_beacons, list), "allowed_beacons params must be a list instance"
+
             self.allowed_beacons = allowed_beacons
 
     def add_allowed_beacon(self, beacon):
@@ -130,7 +132,7 @@ class BeaconManager:
         time.sleep(self.ble_read_time)
 
     def beacon_process(self):
-        assert self.allowed_beacons, "allowed_beacons deve ser setado para utilizar esta operação."
+        assert self.allowed_beacons, "allowed_beacons must be initialize for run this function"
 
         self.read_ble()
         self.clear_scanned_beacons()
