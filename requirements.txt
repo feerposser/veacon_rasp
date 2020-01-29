@@ -1,2 +1,5 @@
-beacontools[scan]
+#beacontools[scan]
 requests
+cbor2==4
+pubnub>=4.2.1
+beacontools
