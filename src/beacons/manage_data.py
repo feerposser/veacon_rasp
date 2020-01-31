@@ -10,11 +10,11 @@ class BeaconManager:
     def __init__(self, set_ble_read_time=15.0, set_allowed_beacons=False, allowed_beacons=None):
         """
         eddy_namespace_rssi = {'eddy_namespace': rssi,}
-        scanned_beacons = list [('eddy_namespace', rssi)] beacons escaneados pelo read_ble. É reiniciado a cada leitura
+        scanned_beacons = list [('eddy_namespace', rssi)] beacons escaneados pelo read_ble. Ã‰ reiniciado a cada leitura
         allowed_beacons = ['eddy_namespace'] beacons que podem ser monitorados. Apenas os beacons cadastrados no sistema
-        :param set_allowed_beacons: Bool. Inicializa os allowed beacons com os dados do sistema através da API.
-        :param set_ble_read_time: Double. Seta o tempo que será usado para ler os bles em segundos
-        Se for setado como False ou None o allowed_beacons será [] e nenhum beacon será lido.
+        :param set_allowed_beacons: Bool. Inicializa os allowed beacons com os dados do sistema atravÃ©s da API.
+        :param set_ble_read_time: Double. Seta o tempo que serÃ¡ usado para ler os bles em segundos
+        Se for setado como False ou None o allowed_beacons serÃ¡ [] e nenhum beacon serÃ¡ lido.
         """
         self.eddy_namespace_rrsi = {}
         self.scanned_beacons = []
@@ -77,9 +77,9 @@ class BeaconManager:
 
     def create_eddy_namespace_rssi(self):
         """
-        Utiliza o scanned_beacons para analisar quais beacons foram escaneados e quais são os valores de rssis
-        encontrados. Cria um dicionário com o nome do beacon escaneado e usa os rssis para criar a mediana que será
-        atribuida ao beacon no dicionário. {'eddy_namespace': rssi}
+        Utiliza o scanned_beacons para analisar quais beacons foram escaneados e quais sÃ£o os valores de rssis
+        encontrados. Cria um dicionÃ¡rio com o nome do beacon escaneado e usa os rssis para criar a mediana que serÃ¡
+        atribuida ao beacon no dicionÃ¡rio. {'eddy_namespace': rssi}
         :return:
         """
         try:
@@ -125,13 +125,15 @@ class BeaconManager:
     def read_ble(self):
         """
         Lê os beacons por um determinado tempo
+        Aqui a lib inicia uma thread. O scanner stop faz o join das threads.
         :return:
         """
         self.scanned_beacons.clear()
         scanner = BeaconScanner(self.read_callback, packet_filter=[EddystoneUIDFrame])
         scanner.start()
-        print("reading ble for % s" % self.ble_read_time)
+        print("reading ble for %s s" % self.ble_read_time)
         time.sleep(self.ble_read_time)
+        scanner.stop()
 
     def beacon_process(self):
         assert self.allowed_beacons, "allowed_beacons must be initialize for run this function"

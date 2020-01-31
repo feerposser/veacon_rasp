@@ -3,11 +3,13 @@ from pubnub.enums import PNStatusCategory
 from pubnub.pnconfiguration import PNConfiguration
 from pubnub.pubnub import PubNub
 
+from settings import PUBNUB_PUBLISH_KEY as PUBLISH_KEY, PUBNUB_SUBSCRIBE_KEY as SUBSCRIBE_KEY, BEACON_GATEWAY_ID
 
 pnconfig = PNConfiguration()
 
-pnconfig.subscribe_key = 'demo'
-pnconfig.publish_key = 'demo'
+pnconfig.subscribe_key = SUBSCRIBE_KEY
+pnconfig.publish_key = PUBLISH_KEY
+pnconfig.uuid = "gateway_01"
 
 pubnub = PubNub(pnconfig)
 
@@ -24,8 +26,7 @@ def my_publish_callback(envelope, status):
 
 class PubSubManager(SubscribeCallback):
 
-    def __init__(self):
-        self.status = {}
+    message_received = {}
 
     def presence(self, pubnub, presence):
         print("presence->", pubnub, presence)
@@ -35,14 +36,10 @@ class PubSubManager(SubscribeCallback):
 
     def message(self, pubnub, message):
         print("PubSub message ->", message.message)
+        self.message_received['teste'] = message.message
+        print(self.message_received)
 
-    @staticmethod
-    def send_message(self, message):
-        try:
-            pubnub.publish().channel("veaconChannel").message(message).pn_async(my_publish_callback)
-        except Exception as e:
-            print(e)
 
 
 pubnub.add_listener(PubSubManager())
-pubnub.subscribe().channels('veaconChannel').execute()
+pubnub.subscribe().channels('veacon_channel_gateway_%s' % BEACON_GATEWAY_ID).execute()

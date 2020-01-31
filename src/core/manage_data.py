@@ -13,5 +13,9 @@ class Core(BeaconManager, WatchpostManager, PubSubManager):
         PubSubManager.__init__(self)
 
     def execute(self):
+        if self.message_received:
+            for message in self.message_received:
+                print(message)
+                print('-'*50)
         if self.watchposts:
             self.beacon_process()
