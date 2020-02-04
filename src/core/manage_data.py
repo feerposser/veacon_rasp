@@ -8,14 +8,17 @@ class Core(BeaconManager, WatchpostManager, PubSubManager):
     def __init__(self):
         WatchpostManager.__init__(self)
         print('watchposts ->', self.watchposts)
-        allowed_beacons = self.get_all_listening_watchposts_beacons()
-        BeaconManager.__init__(self, allowed_beacons=allowed_beacons)
+        BeaconManager.__init__(self, allowed_beacons=self.watchposts.keys())
         PubSubManager.__init__(self)
 
     def execute(self):
         if self.message_received:
-            for message in self.message_received:
-                print(message)
-                print('-'*50)
+            messages = self.message_received.copy()
+            self.message_received.clear()
+            print('pub sub messages --->', messages)
+
         if self.watchposts:
             self.beacon_process()
+
+        for beacon in self.eddy_namespace_rrsi:
+            v = self.compare_beacon_rssi(beacon, self.eddy_namespace_rrsi[beacon])

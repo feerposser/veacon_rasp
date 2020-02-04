@@ -15,6 +15,7 @@ class BeaconManager:
         :param set_allowed_beacons: Bool. Inicializa os allowed beacons com os dados do sistema atravÃ©s da API.
         :param set_ble_read_time: Double. Seta o tempo que serÃ¡ usado para ler os bles em segundos
         Se for setado como False ou None o allowed_beacons serÃ¡ [] e nenhum beacon serÃ¡ lido.
+        :param allowed_beacons: [] Se estiver preenchido irá setar a lista enviada à propriedade allowed beacons
         """
         self.eddy_namespace_rrsi = {}
         self.scanned_beacons = []
@@ -28,36 +29,6 @@ class BeaconManager:
         if allowed_beacons:
             self.allowed_beacons = allowed_beacons
             print("allowed_beacons ->", self.allowed_beacons)
-
-    def add_allowed_beacon(self, beacon):
-        """
-        Adiciona um novo beacon permitido
-        :param beacon: str eddy_namespace
-        :return: allowed beacons ou None
-        """
-        try:
-            assert isinstance(beacon, str)
-            self.allowed_beacons.append(beacon)
-            return self.allowed_beacons
-        except Exception as e:
-            print(e)
-            return None
-
-    def remove_beacon(self, beacon):
-        """
-        Remove um beacon das estruturas que gerenciam os beacons
-        :param beacon:
-        :return:
-        """
-        try:
-            assert isinstance(beacon, str)
-            assert beacon in self.allowed_beacons
-
-            self.allowed_beacons.remove(beacon)
-            if beacon in self.eddy_namespace_rrsi.keys():
-                self.eddy_namespace_rrsi.pop(beacon)
-        except Exception as e:
-            print(e)
 
     @staticmethod
     def get_beacons_eddy_namespaces():
@@ -77,50 +48,33 @@ class BeaconManager:
 
     def create_eddy_namespace_rssi(self):
         """
-        Utiliza o scanned_beacons para analisar quais beacons foram escaneados e quais sÃ£o os valores de rssis
+        Itera sobre o o scanned_beacons para analisar quais beacons foram escaneados e quais sÃ£o os valores de rssis
         encontrados. Cria um dicionÃ¡rio com o nome do beacon escaneado e usa os rssis para criar a mediana que serÃ¡
-        atribuida ao beacon no dicionÃ¡rio. {'eddy_namespace': rssi}
+        atribuida ao beacon no dicionÃ¡rio. {'eddy_namespace': rssi_median}
         :return:
         """
         try:
-            if self.scanned_beacons:
-                self.eddy_namespace_rrsi.clear()
-                for eddy_namespace, rssi in self.scanned_beacons:
-                    if eddy_namespace in self.eddy_namespace_rrsi:
-                        self.eddy_namespace_rrsi[eddy_namespace].append(rssi)
-                    else:
-                        self.eddy_namespace_rrsi[eddy_namespace] = [rssi]
-                for key in self.eddy_namespace_rrsi.keys():
-                    self.eddy_namespace_rrsi[key] = statistics.median(self.eddy_namespace_rrsi[key])
-                return
-            raise AssertionError("No scanned_beacons")
+            self.eddy_namespace_rrsi.clear()
+            for eddy_namespace, rssi in self.scanned_beacons:
+                if eddy_namespace in self.eddy_namespace_rrsi:
+                    self.eddy_namespace_rrsi[eddy_namespace].append(rssi)
+                else:
+                    self.eddy_namespace_rrsi[eddy_namespace] = [rssi]
+
+            for key in self.eddy_namespace_rrsi.keys():
+                self.eddy_namespace_rrsi[key] = statistics.median(self.eddy_namespace_rrsi[key])
+
+            return
         except Exception as e:
             print(e)
 
-    def get_rssi_eddy_namespace(self, eddy_namespace):
-        """
-        Retorna o rssi de um eddy_namespace
-        :param eddy_namespace:
-        :return: int ou None
-        """
-        if eddy_namespace in self.eddy_namespace_rrsi:
-            return self.eddy_namespace_rrsi[eddy_namespace]
-        return None
-
-    def clear_scanned_beacons(self):
-        """
-        Identifica os beacons escaneados pertencentes ao sistema e retira do scanned_beacons os dados
-        de beacons de terceiros
-        :return:
-        """
-        index = 0
-        for namespace, rssi in self.scanned_beacons:
-            if namespace not in self.allowed_beacons:
-                self.scanned_beacons.pop(index)
-            index += 1
-
     def read_callback(self, bt_addr, rssi, packet, additional_info):
-        self.scanned_beacons.append((packet.namespace, rssi))
+        """
+        Função executada quando o BeaconScanner do read_ble encontra um dispositivo emitindo um sinal.
+        analisa se o beacon lido está na lista de beacons permitidos e adiciona à lista de leitura
+        """
+        if packet.namespace in self.allowed_beacons:
+            self.scanned_beacons.append((packet.namespace, rssi))
 
     def read_ble(self):
         """
@@ -139,7 +93,7 @@ class BeaconManager:
         assert self.allowed_beacons, "allowed_beacons must be initialize for run this function"
 
         self.read_ble()
-        self.clear_scanned_beacons()
         self.create_eddy_namespace_rssi()
 
         print('final--->', self.eddy_namespace_rrsi)
+

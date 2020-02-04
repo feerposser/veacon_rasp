@@ -1,5 +1,4 @@
 from pubnub.callbacks import SubscribeCallback
-from pubnub.enums import PNStatusCategory
 from pubnub.pnconfiguration import PNConfiguration
 from pubnub.pubnub import PubNub
 
@@ -14,31 +13,37 @@ pnconfig.uuid = "gateway_01"
 pubnub = PubNub(pnconfig)
 
 
-def my_publish_callback(envelope, status):
-    # Check whether request successfully completed or not
-    if not status.is_error():
-        pass  # Message successfully published to specified channel.
-    else:
-        pass  # Handle message publish error. Check 'category' property to find out possible issue
-        # because of which request did fail.
-        # Request can be resent using: [status retry];
-
-
 class PubSubManager(SubscribeCallback):
 
-    message_received = {}
+    message_received = []
 
     def presence(self, pubnub, presence):
-        print("presence->", pubnub, presence)
+        pass
 
     def status(self, pubnub, status):
         pass
 
     def message(self, pubnub, message):
-        print("PubSub message ->", message.message)
-        self.message_received['teste'] = message.message
-        print(self.message_received)
+        """
+        Funcão executada quando uma mensagem é recebida no canal. Formato da mensagem padrão:
+        {
+            "eddy_namespace": int,
+            "content": str,
+            "operation": "add" ou "rm", / adicionar ou remover
+            "gateway_id": int
+        }
+        :param pubnub:
+        :param message:
+        :return:
+        """
+        try:
+            assert "operation" in message.message, "'operation' not in message"
+            assert "add" or "rm" in message.message["operation"], "'add' or 'rm' not in message"
+            assert "beacon_id" in message.message, "'beacon_id' not in message"
 
+            self.message_received.append(message.message)
+        except Exception as e:
+            print(e)
 
 
 pubnub.add_listener(PubSubManager())

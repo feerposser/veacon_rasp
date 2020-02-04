@@ -12,20 +12,8 @@ class WatchpostManager:
         self.watchposts = {}
         if set_watchpost:
             watchposts = WatchpostServerRequest().get_watchposts()
-            for watchposts in watchposts:
-                self.add_watchpost(watchposts)
-
-    def compare_beacon_rssi(self, eddy_namespace, current_rssi):
-        """
-        Compara o rssi de monitoramento de um beacon com um rssi atual
-        :param eddy_namespace:
-        :param current_rssi:
-        :return:
-        """
-        if eddy_namespace in self.watchposts:
-            if self.watchposts[eddy_namespace]['rssi'] > current_rssi or \
-                    self.watchposts[eddy_namespace]['rssi'] < current_rssi:
-                print(eddy_namespace, current_rssi)
+            for watchpost in watchposts:
+                self.add_watchpost(watchpost)
 
     def add_watchpost(self, watchpost):
         """
@@ -34,42 +22,42 @@ class WatchpostManager:
         :return: None
         """
         try:
-            assert 'id' in watchpost, "'id' não encontrado"
-            assert 'rssi' in watchpost, "'rssi' não encontrado"
-            assert 'beacon' in watchpost, "'beacon' não encontrado"
-            assert watchpost['beacon']['eddy_namespace'] not in self.watchposts, \
-                'Beacon %s já monitorado' % watchpost['beacon']['eddy_namespace']
+            assert 'rssi_max' in watchpost, "'rssi_max' not found"
+            assert 'rssi_min' in watchpost, "'rssi_min' not found"
+            assert 'beacon_namespace' in watchpost, "'beacon_namespace' not found"
 
             self.watchposts[watchpost['beacon']['eddy_namespace']] = {
-                'rssi': watchpost['rssi'],
+                'rssi_max': watchpost['rssi_max'],
+                'rssi_min': watchpost['rssi_min'],
                 'id': watchpost['id']
             }
 
         except AssertionError as a:
             print(a)
-            return
         except Exception as e:
             print(e)
+        finally:
             return
 
-    def get_all_listening_watchposts_beacons(self):
+    def compare_beacon_rssi(self, eddy_namespace, median_rssi):
         """
-        Recupera os eddy_namespaces dos monitoramentos (beacons monitorados)
+        Compara a mediana do rssi escaneado com o max e min rssi. Verifica se não é maior que o máximo e menor que
+        o mínimo
+        :param eddy_namespace:
+        :param median_rssi:
         :return:
         """
-        return self.watchposts.keys()
+        if self.watchposts[eddy_namespace]['rssi_max'] > \
+                median_rssi < self.watchposts[eddy_namespace]['rssi_min']:
+            return True
+        return False
 
-    def get_listening_watchpost(self, eddy_namespace):
-        """
-        Recupera dados do dicionário de monitoramento através no eddy_namespace do beacon monitorado
-        :param eddy_namespace: nome do beacon
-        :return:
-        """
+    def validate_read_beacons(self, eddy_namespace_rrsi, set_warning=False):
+        warning_list = []
 
-        try:
-            if eddy_namespace in self.watchposts:
-                return self.watchposts[eddy_namespace]
-            raise Exception("%s não encontrado no dicionário de monitoramento" % eddy_namespace)
-        except Exception as e:
-            print(e)
-            return None
+        for beacon in eddy_namespace_rrsi:
+            result = self.compare_beacon_rssi(beacon, eddy_namespace_rrsi[beacon])
+            if not result:
+                warning_list.append(self.watchposts[beacon]['id'])
+
+        return warning_list
