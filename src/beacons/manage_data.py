@@ -46,6 +46,15 @@ class BeaconManager:
             return beacon_list
         return []
 
+    @staticmethod
+    def get_median_list(rssi_list):
+        """
+        Retorna a mediana de uma lista
+        :param rssi_list:
+        :return:
+        """
+        return statistics.median(rssi_list)
+
     def create_eddy_namespace_rssi(self):
         """
         Itera sobre o o scanned_beacons para analisar quais beacons foram escaneados e quais sÃ£o os valores de rssis
@@ -62,7 +71,7 @@ class BeaconManager:
                     self.eddy_namespace_rrsi[eddy_namespace] = [rssi]
 
             for key in self.eddy_namespace_rrsi.keys():
-                self.eddy_namespace_rrsi[key] = statistics.median(self.eddy_namespace_rrsi[key])
+                self.eddy_namespace_rrsi[key] = self.get_median_list(self.eddy_namespace_rrsi[key])
 
             return
         except Exception as e:

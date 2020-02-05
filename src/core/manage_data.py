@@ -2,6 +2,8 @@ from beacons.manage_data import BeaconManager
 from watchposts.manage_data import WatchpostManager
 from pubsub.pubsub import PubSubManager
 
+import time
+
 
 class Core(BeaconManager, WatchpostManager, PubSubManager):
 
@@ -21,4 +23,8 @@ class Core(BeaconManager, WatchpostManager, PubSubManager):
             self.beacon_process()
 
         for beacon in self.eddy_namespace_rrsi:
-            v = self.compare_beacon_rssi(beacon, self.eddy_namespace_rrsi[beacon])
+            print("Enviando rssi:", self.eddy_namespace_rrsi)
+            v = self.validate_read_beacons(beacon, self.eddy_namespace_rrsi[beacon])
+
+            print("Esperando 100s para o teste.\nLista de warnings:", *v)
+            time.sleep(100)
