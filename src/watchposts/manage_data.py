@@ -60,14 +60,17 @@ class WatchpostManager:
         :param set_warning: se true envia um alerta para o VeaconSys através de API
         :return: retorna uma lista com os ids dos beacons em estado de alerta
         """
-        warning_list = []
+        try:
+            warning_list = []
 
-        result = self.compare_beacon_rssi(eddy_namespace, rssi)
-        if result:
-            warning_list.append(self.watchposts[eddy_namespace]['id'])
+            result = self.compare_beacon_rssi(eddy_namespace, rssi)
+            if result:
+                warning_list.append(self.watchposts[eddy_namespace]['id'])
 
-        if set_warning:
-            for warning in warning_list:
-                WatchpostServerRequest().post_alert(warning)
+            if set_warning:
+                for warning in warning_list:
+                    WatchpostServerRequest().post_alert(warning)
 
-        return warning_list
+            return warning_list
+        except Exception as e:
+            print('===>', e)
