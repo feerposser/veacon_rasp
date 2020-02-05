@@ -50,7 +50,9 @@ class WatchpostManager:
         :return: True se estiver fora do range rssi near e far, senão falso
         """
         if self.watchposts[eddy_namespace]['rssi_near'] < median_rssi > self.watchposts[eddy_namespace]['rssi_far']:
+            print('deu true')
             return True
+        print('deu false')
         return False
 
     def validate_read_beacons(self, eddy_namespace, rssi, set_warning=False):
@@ -67,8 +69,10 @@ class WatchpostManager:
             if result:
                 warning_list.append(self.watchposts[eddy_namespace]['id'])
 
-            if set_warning:
+            if set_warning and result:
+                print('entrou no if')
                 for warning in warning_list:
+                    print('enviando', warning)
                     WatchpostServerRequest().post_alert(warning)
 
             return warning_list
