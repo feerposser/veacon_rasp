@@ -53,7 +53,7 @@ class WatchpostManager:
             return True
         return False
 
-    def validate_read_beacons(self, eddy_namespace_rrsi, set_warning=False):
+    def validate_read_beacons(self, eddy_namespace, rssi, set_warning=False):
         """
         Valida uma lista de beacons escaneados com mediana.
         :param eddy_namespace_rrsi_list: {"beacon_name": rssi_median,}
@@ -62,10 +62,9 @@ class WatchpostManager:
         """
         warning_list = []
 
-        for beacon in eddy_namespace_rrsi.keys():
-            result = self.compare_beacon_rssi(beacon, eddy_namespace_rrsi[beacon])
-            if result:
-                warning_list.append(self.watchposts[beacon]['id'])
+        result = self.compare_beacon_rssi(eddy_namespace, rssi)
+        if result:
+            warning_list.append(self.watchposts[eddy_namespace]['id'])
 
         if set_warning:
             for warning in warning_list:

@@ -23,7 +23,7 @@ class Core(BeaconManager, WatchpostManager, PubSubManager):
             self.beacon_process()
 
         for beacon in self.eddy_namespace_rrsi:
-            print("Enviando rssi:", self.eddy_namespace_rrsi)
+            print("Enviando rssi '%s'" % beacon, self.eddy_namespace_rrsi[beacon])
             v = self.validate_read_beacons(beacon, self.eddy_namespace_rrsi[beacon])
 
             print("Esperando 100s para o teste.\nLista de warnings:", *v)
