@@ -49,7 +49,8 @@ class WatchpostManager:
         :param median_rssi: float negativo mediana
         :return: True se estiver fora do range rssi near e far, senão falso
         """
-        if self.watchposts[eddy_namespace]['rssi_near'] < median_rssi > self.watchposts[eddy_namespace]['rssi_far']:
+        if self.watchposts[eddy_namespace]['rssi_near'] < median_rssi or \
+                median_rssi > self.watchposts[eddy_namespace]['rssi_far']:
             print('deu true')
             return True
         print('deu false')
