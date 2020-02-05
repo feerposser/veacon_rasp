@@ -24,7 +24,8 @@ class WatchpostManager:
         try:
             assert 'rssi_near' in watchpost, "'rssi_near' not found"
             assert 'rssi_far' in watchpost, "'rssi_far' not found"
-            assert 'beacon_namespace' in watchpost, "'beacon_namespace' not found"
+            assert 'beacon' in watchpost, "'beacon' not found"
+            assert 'eddy_namespace' in watchpost['beacon'], "'beacon.eddy_namespace' not found"
 
             self.watchposts[watchpost['beacon']['eddy_namespace']] = {
                 'rssi_near': watchpost['rssi_near'],
