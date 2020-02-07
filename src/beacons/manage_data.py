@@ -46,6 +46,16 @@ class BeaconManager:
             return beacon_list
         return []
 
+    def add_allowed_beacon(self, eddy_namespace):
+        """
+        adiciona um beacon na lista de beacons permitidos para leitura
+        :param eddy_namespace: nome do beacon
+        :return: None
+        """
+        if eddy_namespace not in self.allowed_beacons:
+            self.allowed_beacons.append(eddy_namespace)
+            print("beacon '%s' autorizado" % eddy_namespace)
+
     def remove_allowed_beacons(self, eddy_namespace):
         """
         Remove um ou mais beacons já que essa é a única estrutura de monitoramento de beacons que não é reiniciada a

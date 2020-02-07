@@ -15,7 +15,30 @@ pubnub = PubNub(pnconfig)
 
 class PubSubManager(SubscribeCallback):
 
-    message_received = []
+    messages_received = []
+
+    class Message:
+
+        def __init__(self, message):
+            self.sender = None
+            self.content = None
+            self.gateway_id = None
+
+            assert "eddy_namespace" in message, "'eddy_namespace' not in message"
+            assert "operation" in message, "'operation' not in message"
+            assert message["operation"] == "add" or message["operation"] == "rm", "'add' or 'rm' not in message"
+
+            if "sender" in message:
+                self.sender = message["sender"]
+            if "content" in message:
+                self.content = message["content"]
+            if "gateway_id" in message:
+                self.gateway_id = message["gateway_id"]
+            self.eddy_namespace = message["eddy_namespace"]
+            self.operation = message["operation"]
+
+        def __str__(self):
+            return self.eddy_namespace + ": " + self.operation
 
     def presence(self, pubnub, presence):
         pass
@@ -32,16 +55,12 @@ class PubSubManager(SubscribeCallback):
             "operation": "add" ou "rm", / adicionar ou remover
             "gateway_id": int
         }
-        :param pubnub:
-        :param message:
-        :return:
         """
         try:
-            assert "operation" in message.message, "'operation' not in message"
-            assert "add" or "rm" in message.message["operation"], "'add' or 'rm' not in message"
-            assert "beacon_id" in message.message, "'beacon_id' not in message"
-
-            self.message_received.append(message.message)
+            message = message.message
+            self.messages_received.append(self.Message(message))
+        except AssertionError as a:
+            print(a)
         except Exception as e:
             print(e)
 
