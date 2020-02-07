@@ -46,6 +46,23 @@ class BeaconManager:
             return beacon_list
         return []
 
+    def remove_allowed_beacons(self, eddy_namespace):
+        """
+        Remove um ou mais beacons já que essa é a única estrutura de monitoramento de beacons que não é reiniciada a
+        cada processo do beacon_process
+        :param eddy_namespace: str nome do beacon
+        :return: Beacon removido ou None
+        """
+        try:
+            self.allowed_beacons.remove(eddy_namespace)
+            return eddy_namespace
+        except ValueError as v:
+            print(v)
+            return None
+        except Exception as e:
+            print(e)
+            return None
+
     @staticmethod
     def get_median_list(rssi_list):
         """

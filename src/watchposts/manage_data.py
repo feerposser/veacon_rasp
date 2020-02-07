@@ -40,6 +40,24 @@ class WatchpostManager:
         finally:
             return
 
+    def remove_watchpost(self, eddy_namespace):
+        """
+        remove um item do dicionario de monitoramento
+        :param eddy_namespace: nome do beacon que está sendo monitorado
+        :return: valor do item monitorado ou None
+        """
+        try:
+            assert eddy_namespace in self.watchposts, "'eddy_namespace' not in watchposts"
+
+            removed = self.watchposts.pop(eddy_namespace)
+            return removed
+        except AssertionError as a:
+            print(a)
+            return None
+        except Exception as e:
+            print(e)
+            return None
+
     def compare_beacon_rssi(self, eddy_namespace, median_rssi):
         """
         Compara a mediana do rssi escaneado com o max e min rssi. Verifica se não é maior que o máximo e menor que
@@ -56,26 +74,29 @@ class WatchpostManager:
         print('deu false')
         return False
 
-    def validate_read_beacons(self, eddy_namespace, rssi, set_warning=False):
+    def validate_read_beacons(self, eddy_namespace, rssi, send_warning=False):
         """
         Valida uma lista de beacons escaneados com mediana.
-        :param eddy_namespace_rrsi_list: {"beacon_name": rssi_median,}
-        :param set_warning: se true envia um alerta para o VeaconSys através de API
+        :param eddy_namespace: {"beacon_name": rssi_median,}
+        :param rssi: double negativo valor da mediana do beacon lido
+        :param send_warning: bool se true envia um alerta para o VeaconSys através de API
         :return: retorna uma lista com os ids dos beacons em estado de alerta
         """
         try:
-            warning_list = []
-
+            warning_item = None
             result = self.compare_beacon_rssi(eddy_namespace, rssi)
             if result:
-                warning_list.append(self.watchposts[eddy_namespace]['id'])
+                warning_item = self.watchposts[eddy_namespace]['id']
+            else:
+                return None
 
-            if set_warning and result:
+            if send_warning:
                 print('entrou no if')
-                for warning in warning_list:
+                for warning in warning_item:
                     print('enviando', warning)
                     WatchpostServerRequest().post_alert(warning)
 
-            return warning_list
+            return warning_item
         except Exception as e:
-            print('===>', e)
+            print(e)
+            return None

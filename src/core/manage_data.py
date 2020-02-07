@@ -18,13 +18,18 @@ class Core(BeaconManager, WatchpostManager, PubSubManager):
             messages = self.message_received.copy()
             self.message_received.clear()
             print('pub sub messages --->', messages)
+            # todo: beacon add + usar o add watchpost
 
         if self.watchposts:
             self.beacon_process()
 
         for beacon in self.eddy_namespace_rrsi:
             print("Enviando rssi '%s'" % beacon, self.eddy_namespace_rrsi[beacon])
-            v = self.validate_read_beacons(beacon, self.eddy_namespace_rrsi[beacon], set_warning=True)
+            warning_item = self.validate_read_beacons(beacon, self.eddy_namespace_rrsi[beacon], send_warning=True)
 
-            print("Esperando 100s para o teste.\nLista de warnings:", *v)
+            if warning_item:
+                self.remove_watchpost(beacon)
+                self.remove_allowed_beacons(beacon)
+
+            print("Esperando 100s para o teste.\nLista de warnings:", warning_item)
             time.sleep(100)
