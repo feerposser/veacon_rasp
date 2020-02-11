@@ -20,8 +20,9 @@ class Core(BeaconManager, WatchpostManager, PubSubManager):
 
         for message in messages:
             if message.operation == "proc":
-                teste = self.proc_allowed_beacon(message.eddy_namespace)
-                print("near: %s\nfar: %s\n" % teste)
+                # teste = self.proc_allowed_beacon(message.eddy_namespace)
+                # print("near: %s\nfar: %s\n" % teste)
+                pass
             elif message.operation == "rm":
                 self.remove_allowed_beacons(message.eddy_namespace)
             elif message.operation == "add":
@@ -46,13 +47,17 @@ class Core(BeaconManager, WatchpostManager, PubSubManager):
         if self.watchposts:  # 2
             self.beacon_process()
 
-            for beacon in self.eddy_namespace_rrsi:  # 3
-                print("Enviando rssi '%s'" % beacon, self.eddy_namespace_rrsi[beacon])
-                warning_item = self.validate_read_beacons(beacon, self.eddy_namespace_rrsi[beacon], send_warning=True)
+            for beacon in self.beacon_state:  # 3
+                print("Analisando:", self.beacon_state[beacon])
 
-                if warning_item:
-                    self.remove_watchpost(beacon)
-                    self.remove_allowed_beacons(beacon)
+                print(self.beacon_state[beacon].rssi_comparation())
 
-                print("Esperando 100s para o teste.\nLista de warnings:", warning_item)
+                # warning_items = self.validate_read_beacon(self.beacon_state[beacon], send_warning=True)
+                #
+                # if warning_items:
+                #     self.remove_watchpost(beacon)
+                #     self.remove_allowed_beacons(beacon)
+                #
+                # print("Esperando 100s para o teste.\nLista de warnings:", warning_items)
+                print("aguardando")
                 time.sleep(100)

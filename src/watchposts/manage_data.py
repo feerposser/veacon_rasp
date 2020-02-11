@@ -58,35 +58,17 @@ class WatchpostManager:
             print(e)
             return None
 
-    def compare_beacon_rssi(self, eddy_namespace, median_rssi):
-        """
-        Compara a mediana do rssi escaneado com o max e min rssi. Verifica se não é maior que o máximo e menor que
-        o mínimo.
-        O rssi é medido através de números negativos. Quanto mais próximo a 0 mais perto se está do beacon.
-        :param eddy_namespace:  str nome do beacon
-        :param median_rssi: float negativo mediana
-        :return: True se estiver fora do range rssi near e far, senão falso
-        """
-        if self.watchposts[eddy_namespace]['rssi_near'] < median_rssi or \
-                median_rssi > self.watchposts[eddy_namespace]['rssi_far']:
-            print('deu true')
-            return True
-        print('deu false')
-        return False
-
-    def validate_read_beacons(self, eddy_namespace, rssi, send_warning=False):
+    def validate_read_beacon(self, beacon, send_warning=False):
         """
         Valida uma lista de beacons escaneados com mediana.
-        :param eddy_namespace: {"beacon_name": rssi_median,}
-        :param rssi: double negativo valor da mediana do beacon lido
+        :param beacon: Beacon objeto Beacon
         :param send_warning: bool se true envia um alerta para o VeaconSys através de API
         :return: retorna uma lista com os ids dos beacons em estado de alerta
         """
         try:
             warning_item = None
-            result = self.compare_beacon_rssi(eddy_namespace, rssi)
-            if result:
-                warning_item = self.watchposts[eddy_namespace]['id']
+            if beacon.rssi_comparation():
+                warning_item = self.watchposts[beacon.eddy_namespace]['id']
             else:
                 return None
 

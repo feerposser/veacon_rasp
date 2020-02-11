@@ -6,11 +6,60 @@ from beacons.beacons_server_request import BeaconServerRequest
 from pubsub.pubsub import Message
 
 
+class Beacon:
+
+    """
+    state: responsável por identificar o estado atual do beacon.
+    A: ativo. Está sendo monitorado
+    I: inativo. O monitoramento deste beacon foi finalizado
+    P: processamento: estão sendo recolhidos dados para identificar as distâncias do beacon para o gateway
+    """
+
+    def __init__(self, eddy_namespace, rssis_list, state=None):
+        """
+        :param eddy_namespace: str nome do beacon
+        :param rssis_list: list ou tuple dos dados de rssi
+        :param state: char estado do beacon
+        """
+        self.eddy_namespace = eddy_namespace
+        self.median_rssi = statistics.median(rssis_list)
+        self.near_rssi = max(rssis_list)
+        self.far_rssi = min(rssis_list)
+        self.state = state
+
+    def __str__(self):
+        return self.eddy_namespace + " state: " + self.state + " median: " + str(self.median_rssi)
+
+    def rssi_comparation(self):
+        """
+        Compara a rssi mediana com o near e far rssi. Verifica se a mediana não é maior que o mais próximo nem menor
+        que o mais distante.
+        O rssi é medido através de números negativos. Quanto mais próximo a 0 mais perto se está do beacon.
+        Se a mediana for maior (mais positivo) do que o rssi mais próximo encontrado no scaneamento, ou, ainda,
+        mais distante (mais negativo) que a medida mais distante, então o beacon foi movido de local junto com o carro
+        :return:
+        """
+        if self.state == "A":
+            if self.near_rssi < self.median_rssi or self.median_rssi > self.far_rssi:
+                return True
+            return False
+        raise Exception("state must be 'A' not '%s' for run this method" % self.state)
+
+    def set_near_far_rssi(self, rssi_list):
+        """
+        atualiza o near e o far rssi do beacon
+        :param rssi_list: list dados de rssi
+        :return:
+        """
+        self.near_rssi = max(rssi_list)
+        self.far_rssi = min(rssi_list)
+
+
 class BeaconManager:
 
     def __init__(self, set_ble_read_time=15.0, set_allowed_beacons=False, allowed_beacons=None):
         """
-        eddy_namespace_rssi = {'eddy_namespace': rssi,}
+        beacon_state = {'eddy_namespace': Beacon,}
         scanned_beacons = list [('eddy_namespace', rssi)] beacons escaneados pelo read_ble. Ã‰ reiniciado a cada leitura
         allowed_beacons = ['eddy_namespace'] beacons que podem ser monitorados. Apenas os beacons cadastrados no sistema
         :param set_allowed_beacons: Bool. Inicializa os allowed beacons com os dados do sistema atravÃ©s da API.
@@ -18,10 +67,9 @@ class BeaconManager:
         Se for setado como False ou None o allowed_beacons serÃ¡ [] e nenhum beacon serÃ¡ lido.
         :param allowed_beacons: [] Se estiver preenchido irá setar a lista enviada à propriedade allowed beacons
         """
-        self.eddy_namespace_rrsi = {}
-        self.scanned_beacons = []
-
         self.ble_read_time = set_ble_read_time
+        self.beacon_state = {}
+        self.scanned_beacons = []
         self.allowed_beacons = []
 
         if set_allowed_beacons:
@@ -47,32 +95,8 @@ class BeaconManager:
             return beacon_list
         return []
 
-    def proc_allowed_beacon(self, eddy_namespace):
-        """
-        Executa o procedimento de inserção de um novo beacon para um novo monitoramento do sistema
-        vulnerabilidade: qualquer eddy_namespace que chegar via pubsub será adicionado.
-        :param eddy_namespace:
-        :return: None
-        """
-
-        rssis = []
-
-        def read_a_ble(bt_addr, rssi, packet, additional_info):
-            rssis.append(rssi)
-
-        if eddy_namespace not in self.allowed_beacons:
-            self.allowed_beacons.append(eddy_namespace)
-            print("beacon '%s' autorizado" % eddy_namespace)
-
-            scanner = BeaconScanner(callback=read_a_ble,
-                                    device_filter=[eddy_namespace],
-                                    packet_filter=[EddystoneUIDFrame])
-            scanner.start()
-            print("Coletando dados para '%s'" % eddy_namespace)
-            time.sleep(self.ble_read_time)
-            scanner.stop()
-            near, far = max(rssis), min(rssis)
-            return near, far
+    def insert_beacon(self, eddy_namespace):
+        self.allowed_beacons.append(eddy_namespace)
 
     def remove_allowed_beacons(self, eddy_namespace):
         """
@@ -91,34 +115,50 @@ class BeaconManager:
             print(e)
             return None
 
-    @staticmethod
-    def get_median_list(rssi_list):
+    def create_beacon_state(self, eddy_namespace, rssis):
         """
-        Retorna a mediana de uma lista
-        :param rssi_list:
+        cria uma nova instancia de Beacon em beacon_state
+        :param eddy_namespace: str nome do beacon
+        :param rssis: list ou tuple com dados de rssi
+        :return: Instancia do beacon cadastrado ou None
+        """
+        assert isinstance(rssis, list) or isinstance(rssis, tuple), "rssis must be a list or tuple instante"
+
+        if eddy_namespace not in self.beacon_state:
+            self.beacon_state[eddy_namespace] = Beacon(eddy_namespace, rssis)
+            return self.beacon_state[eddy_namespace]
+
+    def refresh_beacon_state(self, eddy_namespace, rssis):
+        """
+        Atualiza os dados de near e far da instancia do beacon em beacon_status
+        :param eddy_namespace: str nome do beacon
+        :param rssis: list ou tuple com dados de rssis coletados
         :return:
         """
-        return statistics.median(rssi_list)
+        assert isinstance(rssis, list) or isinstance(rssis, tuple), "rssis must be a list or tuple instance"
 
-    def create_eddy_namespace_rssi(self):
+        if eddy_namespace in self.beacon_state:
+            self.beacon_state[eddy_namespace].set_near_far_rssi(rssis)
+
+            return self.beacon_state[eddy_namespace]
+        return None
+
+    def do_beacon_state(self):
         """
         Itera sobre o o scanned_beacons para analisar quais beacons foram escaneados e quais sÃ£o os valores de rssis
         encontrados. Cria um dicionÃ¡rio com o nome do beacon escaneado e usa os rssis para criar a mediana que serÃ¡
-        atribuida ao beacon no dicionÃ¡rio. {'eddy_namespace': rssi_median}
-        :return:
+        atribuida ao beacon no dicionÃ¡rio. {'eddy_namespace': Beacon}
         """
         try:
-            self.eddy_namespace_rrsi.clear()
-            for eddy_namespace, rssi in self.scanned_beacons:
-                if eddy_namespace in self.eddy_namespace_rrsi:
-                    self.eddy_namespace_rrsi[eddy_namespace].append(rssi)
+            for eddy_namespace, rssis in self.scanned_beacons:
+                if eddy_namespace in self.beacon_state:
+                    refresh = self.refresh_beacon_state(eddy_namespace, rssis)
+                    if not refresh:
+                        raise Exception("Erro ao atualizar o estado do beacon '%s'" % eddy_namespace)
                 else:
-                    self.eddy_namespace_rrsi[eddy_namespace] = [rssi]
-
-            for key in self.eddy_namespace_rrsi.keys():
-                self.eddy_namespace_rrsi[key] = self.get_median_list(self.eddy_namespace_rrsi[key])
-
-            return
+                    create = self.create_beacon_state(eddy_namespace, rssis)
+                    if not create:
+                        raise Exception("Erro ao criar estado do beacon '%s'" % eddy_namespace)
         except Exception as e:
             print(e)
 
@@ -130,18 +170,14 @@ class BeaconManager:
         if packet.namespace in self.allowed_beacons:
             self.scanned_beacons.append((packet.namespace, rssi))
 
-    def read_ble(self, callback, beacon=None):
-        """
-        Lê os beacons por um determinado tempo
-        Aqui a lib inicia uma thread. O scanner stop faz o join das threads.
-        """
+    def read_ble(self):
+        """Lê os beacons por um determinado tempo Aqui a lib inicia uma thread.
+        O scanner stop faz o join das threads """
 
         scanner = BeaconScanner(
-            callback,
+            self.read_callback,
             packet_filter=[EddystoneUIDFrame]
         )
-        if beacon:
-            scanner.device_filter = EddystoneFilter(namespace=beacon)
 
         scanner.start()
         print("reading ble for %s s" % self.ble_read_time)
@@ -152,8 +188,8 @@ class BeaconManager:
         assert self.allowed_beacons, "allowed_beacons must be initialize to run this function"
 
         self.scanned_beacons.clear()
-        self.read_ble(self.read_callback, "edd1ebeac04e5defa017")
-        self.create_eddy_namespace_rssi()
+        self.read_ble()
+        self.do_beacon_state()
 
-        print('final--->', self.eddy_namespace_rrsi)
+        print('final--->', self.beacon_state)
 
