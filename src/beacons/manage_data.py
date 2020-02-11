@@ -122,7 +122,8 @@ class BeaconManager:
         :param rssis: list ou tuple com dados de rssi
         :return: Instancia do beacon cadastrado ou None
         """
-        assert isinstance(rssis, list) or isinstance(rssis, tuple), "rssis must be a list or tuple instante"
+        assert isinstance(rssis, list) or isinstance(rssis, tuple), \
+            "rssis must be a list or tuple instance not '%s'. %s" % (type(rssis), str(rssis))
 
         if eddy_namespace not in self.beacon_state:
             self.beacon_state[eddy_namespace] = Beacon(eddy_namespace, rssis)
