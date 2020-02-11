@@ -151,17 +151,22 @@ class BeaconManager:
         atribuida ao beacon no dicionÃ¡rio. {'eddy_namespace': Beacon}
         """
         try:
-            print(self.scanned_beacons)
-            for eddy_namespace, rssis in self.scanned_beacons:
-                print(rssis)
-                if eddy_namespace in self.beacon_state:
-                    refresh = self.refresh_beacon_state(eddy_namespace, rssis)
-                    if not refresh:
-                        raise Exception("Erro ao atualizar o estado do beacon '%s'" % eddy_namespace)
+            scanned_beacons = {}
+            for eddy_namespace, rssi in self.scanned_beacons:
+                if eddy_namespace in scanned_beacons:
+                    scanned_beacons[eddy_namespace].append(rssi)
                 else:
-                    create = self.create_beacon_state(eddy_namespace, rssis)
+                    scanned_beacons[eddy_namespace] = [rssi]
+
+            for key in scanned_beacons.keys():
+                if key in self.beacon_state:
+                    refresh = self.refresh_beacon_state(key, scanned_beacons[key])
+                    if not refresh:
+                        raise Exception("Erro ao atualizar o estado do beacon '%s'" % key)
+                else:
+                    create = self.create_beacon_state(key, scanned_beacons[key])
                     if not create:
-                        raise Exception("Erro ao criar estado do beacon '%s'" % eddy_namespace)
+                        raise Exception("Erro ao criar estado do beacon '%s'" % key)
         except Exception as e:
             print(e)
 
