@@ -1,6 +1,6 @@
 import time
 import statistics
-from beacontools import BeaconScanner, EddystoneUIDFrame
+from beacontools import BeaconScanner, EddystoneUIDFrame, EddystoneFilter
 
 from beacons.beacons_server_request import BeaconServerRequest
 from pubsub.pubsub import Message
@@ -130,7 +130,7 @@ class BeaconManager:
         if packet.namespace in self.allowed_beacons:
             self.scanned_beacons.append((packet.namespace, rssi))
 
-    def read_ble(self, callback, beacons):
+    def read_ble(self, callback, beacon=None):
         """
         Lê os beacons por um determinado tempo
         Aqui a lib inicia uma thread. O scanner stop faz o join das threads.
@@ -138,9 +138,11 @@ class BeaconManager:
 
         scanner = BeaconScanner(
             callback,
-            device_filter=beacons,
             packet_filter=[EddystoneUIDFrame]
         )
+        if beacon:
+            scanner.device_filter = EddystoneFilter(namespace=beacon)
+        
         scanner.start()
         print("reading ble for %s s" % self.ble_read_time)
         time.sleep(self.ble_read_time)
@@ -150,7 +152,7 @@ class BeaconManager:
         assert self.allowed_beacons, "allowed_beacons must be initialize to run this function"
 
         self.scanned_beacons.clear()
-        self.read_ble(self.read_callback, self.allowed_beacons)
+        self.read_ble(self.read_callback)
         self.create_eddy_namespace_rssi()
 
         print('final--->', self.eddy_namespace_rrsi)
