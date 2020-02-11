@@ -142,7 +142,7 @@ class BeaconManager:
         )
         if beacon:
             scanner.device_filter = EddystoneFilter(namespace=beacon)
-        
+
         scanner.start()
         print("reading ble for %s s" % self.ble_read_time)
         time.sleep(self.ble_read_time)
@@ -152,7 +152,7 @@ class BeaconManager:
         assert self.allowed_beacons, "allowed_beacons must be initialize to run this function"
 
         self.scanned_beacons.clear()
-        self.read_ble(self.read_callback)
+        self.read_ble(self.read_callback, self.allowed_beacons[0])
         self.create_eddy_namespace_rssi()
 
         print('final--->', self.eddy_namespace_rrsi)
