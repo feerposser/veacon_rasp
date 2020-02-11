@@ -3,6 +3,7 @@ import statistics
 from beacontools import BeaconScanner, EddystoneUIDFrame
 
 from beacons.beacons_server_request import BeaconServerRequest
+from pubsub.pubsub import Message
 
 
 class BeaconManager:
@@ -46,15 +47,32 @@ class BeaconManager:
             return beacon_list
         return []
 
-    def add_allowed_beacon(self, eddy_namespace):
+    def proc_allowed_beacon(self, eddy_namespace):
         """
-        adiciona um beacon na lista de beacons permitidos para leitura
-        :param eddy_namespace: nome do beacon
+        Executa o procedimento de inserção de um novo beacon para um novo monitoramento do sistema
+        vulnerabilidade: qualquer eddy_namespace que chegar via pubsub será adicionado.
+        :param eddy_namespace:
         :return: None
         """
+
+        rssis = []
+
+        def read_a_ble(bt_addr, rssi, packet, additional_info):
+            rssis.append(rssi)
+
         if eddy_namespace not in self.allowed_beacons:
             self.allowed_beacons.append(eddy_namespace)
             print("beacon '%s' autorizado" % eddy_namespace)
+
+            scanner = BeaconScanner(callback=read_a_ble,
+                                    device_filter=[eddy_namespace],
+                                    packet_filter=[EddystoneUIDFrame])
+            scanner.start()
+            print("Coletando dados para '%s'" % eddy_namespace)
+            time.sleep(self.ble_read_time)
+            scanner.stop()
+            near, far = max(rssis), min(rssis)
+            return near, far
 
     def remove_allowed_beacons(self, eddy_namespace):
         """
@@ -112,23 +130,27 @@ class BeaconManager:
         if packet.namespace in self.allowed_beacons:
             self.scanned_beacons.append((packet.namespace, rssi))
 
-    def read_ble(self):
+    def read_ble(self, callback, beacons):
         """
         Lê os beacons por um determinado tempo
         Aqui a lib inicia uma thread. O scanner stop faz o join das threads.
-        :return:
         """
-        self.scanned_beacons.clear()
-        scanner = BeaconScanner(self.read_callback, packet_filter=[EddystoneUIDFrame])
+
+        scanner = BeaconScanner(
+            callback,
+            device_filter=beacons,
+            packet_filter=[EddystoneUIDFrame]
+        )
         scanner.start()
         print("reading ble for %s s" % self.ble_read_time)
         time.sleep(self.ble_read_time)
         scanner.stop()
 
     def beacon_process(self):
-        assert self.allowed_beacons, "allowed_beacons must be initialize for run this function"
+        assert self.allowed_beacons, "allowed_beacons must be initialize to run this function"
 
-        self.read_ble()
+        self.scanned_beacons.clear()
+        self.read_ble(self.read_callback, self.allowed_beacons)
         self.create_eddy_namespace_rssi()
 
         print('final--->', self.eddy_namespace_rrsi)

@@ -17,7 +17,17 @@ class Core(BeaconManager, WatchpostManager, PubSubManager):
         messages = self.messages_received.copy()
         self.messages_received.clear()
         print('pub sub messages --->', messages)
-        self.add_allowed_beacon(messages)
+
+        for message in messages:
+            if message.operation == "proc":
+                teste = self.proc_allowed_beacon(message.eddy_namespace)
+                print("near: %s\nfar: %s\n" % teste)
+            elif message.operation == "rm":
+                self.remove_allowed_beacons(message.eddy_namespace)
+            elif message.operation == "add":
+                pass
+            else:
+                pass
 
     def execute(self):
         """

@@ -13,32 +13,33 @@ pnconfig.uuid = "gateway_01"
 pubnub = PubNub(pnconfig)
 
 
+class Message:
+
+    def __init__(self, message):
+        self.sender = None
+        self.content = None
+        self.gateway_id = None
+
+        assert "eddy_namespace" in message, "'eddy_namespace' not in message"
+        assert "operation" in message, "'operation' not in message"
+        assert message["operation"] == "add" or message["operation"] == "rm", "'add' or 'rm' not in message"
+
+        if "sender" in message:
+            self.sender = message["sender"]
+        if "content" in message:
+            self.content = message["content"]
+        if "gateway_id" in message:
+            self.gateway_id = message["gateway_id"]
+        self.eddy_namespace = message["eddy_namespace"]
+        self.operation = message["operation"]
+
+    def __str__(self):
+        return self.eddy_namespace + ": " + self.operation
+
+
 class PubSubManager(SubscribeCallback):
 
     messages_received = []
-
-    class Message:
-
-        def __init__(self, message):
-            self.sender = None
-            self.content = None
-            self.gateway_id = None
-
-            assert "eddy_namespace" in message, "'eddy_namespace' not in message"
-            assert "operation" in message, "'operation' not in message"
-            assert message["operation"] == "add" or message["operation"] == "rm", "'add' or 'rm' not in message"
-
-            if "sender" in message:
-                self.sender = message["sender"]
-            if "content" in message:
-                self.content = message["content"]
-            if "gateway_id" in message:
-                self.gateway_id = message["gateway_id"]
-            self.eddy_namespace = message["eddy_namespace"]
-            self.operation = message["operation"]
-
-        def __str__(self):
-            return self.eddy_namespace + ": " + self.operation
 
     def presence(self, pubnub, presence):
         pass
@@ -58,7 +59,7 @@ class PubSubManager(SubscribeCallback):
         """
         try:
             message = message.message
-            self.messages_received.append(self.Message(message))
+            self.messages_received.append(Message(message))
         except AssertionError as a:
             print(a)
         except Exception as e:
