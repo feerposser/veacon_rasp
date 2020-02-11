@@ -151,7 +151,9 @@ class BeaconManager:
         atribuida ao beacon no dicionÃ¡rio. {'eddy_namespace': Beacon}
         """
         try:
+            print(self.scanned_beacons)
             for eddy_namespace, rssis in self.scanned_beacons:
+                print(rssis)
                 if eddy_namespace in self.beacon_state:
                     refresh = self.refresh_beacon_state(eddy_namespace, rssis)
                     if not refresh:
