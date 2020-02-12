@@ -28,7 +28,7 @@ class Beacon:
         self.state = state
 
     def __str__(self):
-        return " ".join([self.eddy_namespace, "state", self.state, "mediam", self.median_rssi])
+        return " ".join([self.eddy_namespace, "mediam", self.median_rssi])
 
     def rssi_comparation(self):
         """
