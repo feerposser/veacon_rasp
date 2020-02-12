@@ -34,6 +34,7 @@ class WatchpostServerRequest(BaseRequest):
         :param: watchpost_id: id do monitoramento
         :return: True se deu certo ou None
         """
+        print("sending warning for '%s' watchpost" % watchpost_id)
         data = {'watchpost_fk': watchpost_id}
         r = requests.post(self.IP_SERVER+'alert/', headers=self.AUTH, data=data)
 
