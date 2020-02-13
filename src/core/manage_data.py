@@ -8,11 +8,13 @@ import time
 class Core(WatchpostManager, PubSubManager):
 
     def __init__(self):
+        print("\t... Iniciando o Core da aplicação")
         WatchpostManager.__init__(self)
         print('watchposts ->', self.watchposts)
         PubSubManager.__init__(self)
 
     def process_messages(self):
+        print('\t... Iniciando processamento de mensagem recebida')
         messages = self.messages_received.copy()
         self.messages_received.clear()
         print('pub sub messages --->', messages)
@@ -32,6 +34,5 @@ class Core(WatchpostManager, PubSubManager):
             pass
 
         if self.watchposts:  # 2
+            print("\t... Iniciando processo de monitoramento")
             self.watchpost_manager_process()
-            print("aguardando")
-            time.sleep(100)

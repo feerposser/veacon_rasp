@@ -72,6 +72,7 @@ class WatchpostManager:
         Inicia buscando monitoramentos cadastrados no sistema e cria um dicionário que armazena as informações
         dos dados que o rasp está monitorando
         """
+        print("\t... Iniciando Watchpost Manager")
         self.watchposts = {}
         watchposts = WatchpostServerRequest().get_watchposts()
         for watchpost in watchposts:
@@ -169,7 +170,7 @@ class WatchpostManager:
 
     def validate_read_beacon(self, eddy_namespace, send_warning=False):
         """
-        Valida uma lista de beacons escaneados com mediana.
+        Processo de validação de um monitoramento (rssi_comparation)
         :param eddy_namespace: str nome do beacon
         :param send_warning: bool se true envia um alerta para o VeaconSys através de API
         :return: int com id do watchpost ou None
@@ -181,32 +182,33 @@ class WatchpostManager:
             watchpost = self.watchposts[eddy_namespace]
 
             if watchpost.rssi_comparation():
+                print("\t...Alerta de monitoramento para '%s'" % watchpost.eddy_namespace)
                 warning_item = watchpost.id
 
                 if send_warning:
                     WatchpostServerRequest().post_alert(warning_item)
-
+            else:
+                print("\t...Sem alerta de monitoramento para '%s'" % watchpost.eddy_namespace)
             return warning_item
         except AssertionError as a:
             print("validate read beacon", a)
             return None
 
         except Exception as e:
-            print(e)
+            print("validate read beacon", e)
             return None
 
     def process_validate_read_beacon(self):
+        """ Itera sobre o dicionário de objetos Watchpost e aciona o método que processa a validação do objeto """
         for key in self.watchposts.keys():  # .items?
-            validate = self.validate_read_beacon(key)
+            validate = self.validate_read_beacon(key, send_warning=True)
             if validate:
                 # todo: o que fazer se foi enviado alerta? E se não for?
                 pass
 
     def watchpost_manager_process(self):
-        """
-        Centraliza o processo de regra de negócio
-        :return:
-        """
+        """ Centraliza o processo de regra de negócio"""
+
         rssis_list = self.beacon_manager.beacon_process()
 
         print('---->\n', rssis_list)

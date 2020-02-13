@@ -13,6 +13,7 @@ class BeaconManager:
         Se for setado como False ou None o allowed_beacons serÃ¡ [] e nenhum beacon serÃ¡ lido.
         :param allowed_beacons: [] Se estiver preenchido irá setar a lista enviada à propriedade allowed beacons
         """
+        print("\t... Iniciando Beacon Manager")
         self.ble_read_time = set_ble_read_time
         self.beacon_rssis = {}
         self.scanned_beacons = []
