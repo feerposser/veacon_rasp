@@ -3,6 +3,7 @@ from pubnub.pnconfiguration import PNConfiguration
 from pubnub.pubnub import PubNub
 
 from settings import PUBNUB_PUBLISH_KEY as PUBLISH_KEY, PUBNUB_SUBSCRIBE_KEY as SUBSCRIBE_KEY, BEACON_GATEWAY_ID
+from core.exceptions import MessageReceivedException
 
 pnconfig = PNConfiguration()
 
@@ -16,22 +17,39 @@ pubnub = PubNub(pnconfig)
 class Message:
 
     def __init__(self, message):
-        self.sender = None
-        self.content = None
-        self.gateway_id = None
 
-        assert "eddy_namespace" in message, "'eddy_namespace' not in message"
-        assert "operation" in message, "'operation' not in message"
-        assert message["operation"] == "add" or message["operation"] == "rm", "'add' or 'rm' not in message"
+        if self.is_valid(message):
+            self.id = message["id"]
+            self.eddy_namespace = message["eddy_namespace"]
+            self.operation = message["operation"]
 
-        if "sender" in message:
-            self.sender = message["sender"]
-        if "content" in message:
-            self.content = message["content"]
-        if "gateway_id" in message:
-            self.gateway_id = message["gateway_id"]
-        self.eddy_namespace = message["eddy_namespace"]
-        self.operation = message["operation"]
+            self.sender = None
+            self.content = None
+            self.gateway_id = None
+
+            if "sender" in message:
+                self.sender = message["sender"]
+            if "content" in message:
+                self.content = message["content"]
+            if "gateway_id" in message:
+                self.gateway_id = message["gateway_id"]
+        raise MessageReceivedException("Mensagem inválida")
+
+    @staticmethod
+    def is_valid(message):
+        try:
+            assert "id" in message, "'id' not in message"
+            assert "eddy_namespace" in message, "'eddy_namespace' not in message"
+            assert "operation" in message, "'operation' not in message"
+            assert message["operation"] == "add" or \
+                   message["operation"] == "rm" or \
+                   message["operation"] == "proc", \
+                "'add' 'rm' or 'proc' not in message. {} instead".format(message["operation"])
+
+            return True
+        except AssertionError as a:
+            print('Warning: Message is not valid.', a)
+            return False
 
     def __str__(self):
         return self.eddy_namespace + ": " + self.operation
@@ -48,18 +66,13 @@ class PubSubManager(SubscribeCallback):
         pass
 
     def message(self, pubnub, message):
-        """
-        Funcão executada quando uma mensagem é recebida no canal. Formato da mensagem padrão:
-        {
-            "eddy_namespace": int,
-            "content": str,
-            "operation": "add" ou "rm", / adicionar ou remover
-            "gateway_id": int
-        }
-        """
+        """ Funcão executada quando uma mensagem é recebida no canal """
+
         try:
             message = message.message
             self.messages_received.append(Message(message))
+        except MessageReceivedException as m:
+            print(m)
         except AssertionError as a:
             print(a)
         except Exception as e:

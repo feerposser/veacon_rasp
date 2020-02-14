@@ -49,6 +49,21 @@ class Watchpost:
             return self._rssi_near, self._rssi_far
         return None
 
+    def change_status(self, status):
+        try:
+            assert status == "A" or status == "rm", "status must be 'A' for 'rm'. {} instead".format(status)
+
+            self.status = status
+        except Exception as e:
+            print(e)
+            return None
+
+    def get_rssi_near(self):
+        return self._rssi_near
+
+    def get_rssi_far(self):
+        return self._rssi_far
+
     def rssi_comparation(self):
         """
         Compara a rssi mediana com o near e far rssi. Verifica se a mediana não é maior que o mais próximo nem menor
@@ -74,42 +89,47 @@ class WatchpostManager:
         """
         print("\t... Iniciando Watchpost Manager")
         self.watchposts = {}
-        watchposts = WatchpostServerRequest().get_watchposts()
+        watchposts = WatchpostServerRequest().get_watchposts(add_watchpost_format=True)
         for watchpost in watchposts:
             self.add_watchpost(watchpost)
 
         self.beacon_manager = BeaconManager(allowed_beacons=self.watchposts.keys())
 
+    def exists(self, eddy_namespace):
+        if eddy_namespace in self.watchposts.keys():
+            return True
+        return False
+
     def add_watchpost(self, watchpost):
         """
         Adiciona um novo monitoramento no dicionário de monitoramentos
-        :param watchpost: Estrutura vinda da API
-        :return: Objeto Watchpost adicionado ou None
+        :param watchpost: dict
+        :return: Watchpost ou None
         """
         try:
             assert 'id' in watchpost, "'id' not found"
             assert 'status' in watchpost, "'status' not found"
-            assert 'beacon' in watchpost and 'eddy_namespace' in watchpost['beacon'], \
-                "'beacon' data or beacon.eddy_namespace data not found"
+            assert 'eddy_namespace' in watchpost['beacon'], "eddy_namespace not fount in watchpost"
 
             id = watchpost['id']
             status = watchpost['status']
-            eddy_namespace = watchpost['beacon']['eddy_namespace']
+            eddy_namespace = watchpost['eddy_namespace']
 
-            assert eddy_namespace not in self.watchposts, "'%s' already in watchposts list" % eddy_namespace
+            assert not self.exists(eddy_namespace), "'%s' already in watchposts list" % eddy_namespace
 
             if 'rssi_near' in watchpost and 'rssi_far' in watchpost:
                 rssi_near, rssi_far = watchpost['rssi_near'], watchpost['rssi_far']
                 self.watchposts[eddy_namespace] = Watchpost(id, eddy_namespace, status, near=rssi_near, far=rssi_far)
             else:
                 self.watchposts[eddy_namespace] = Watchpost(id, eddy_namespace, status)
+
             return self.watchposts[eddy_namespace]
 
         except AssertionError as a:
             print('add watchpost', a)
             return None
         except Exception as e:
-            print(e)
+            print('add watchpost', e)
             return None
 
     def remove_watchpost(self, eddy_namespace):
@@ -119,7 +139,7 @@ class WatchpostManager:
         :return: valor do item monitorado ou None
         """
         try:
-            assert eddy_namespace in self.watchposts, "'eddy_namespace' not in watchposts"
+            assert self.exists(eddy_namespace), "'eddy_namespace' not in watchposts"
 
             removed = self.watchposts.pop(eddy_namespace)
             return removed
@@ -130,6 +150,20 @@ class WatchpostManager:
             print(e)
             return None
 
+    def set_remove_watchpost_status(self, eddy_namespace):
+        try:
+            assert eddy_namespace in self.watchposts, "{} not in watchposts".format(eddy_namespace)
+
+            watchpost = self.watchposts[eddy_namespace]
+            watchpost.status = "rm"
+            return watchpost
+        except AssertionError as a:
+            print("set remove status", a)
+            return None
+        except Exception as e:
+            print("set remove status", e)
+            return None
+
     def refresh_watchpost(self, eddy_namespace, rssis_list):
         """
         atualiza os dados do watchpost (mediana do rssi)
@@ -138,12 +172,27 @@ class WatchpostManager:
         :return: objeto Watchpost atualizado ou None
         """
         try:
-            assert eddy_namespace in self.watchposts, "'%s' not in watchposts"
+            assert self.exists(eddy_namespace), "'%s' not in watchposts"
 
             print("...atualizando watchpost", eddy_namespace)
 
             watchpost = self.watchposts[eddy_namespace]
-            watchpost.refresh_mediam_rssi(rssis_list)
+
+            if watchpost.status == "A":
+                watchpost.refresh_mediam_rssi(rssis_list)
+            elif watchpost.status == "proc":
+                watchpost.set_near_far_rssi(rssis_list)
+                watchpost.refresh_mediam_rssi(rssis_list)
+                watchpost.status = "A"
+                WatchpostServerRequest().patch_watchpost(id=watchpost.id,
+                                                         rssi_near=watchpost.get_rssi_near(),
+                                                         rssi_far=watchpost.get_rssi_far(),
+                                                         status=watchpost.status)
+            elif watchpost.status == "rm":
+                removed = self.remove_watchpost(watchpost.eddy_namespace)
+                if removed:
+                    WatchpostServerRequest().patch_watchpost(id=removed.id, status=removed.status)
+
             return watchpost
 
         except AssertionError as a:
@@ -159,12 +208,12 @@ class WatchpostManager:
         """
         try:
             for key in rssis_list:
-                if key in self.watchposts:
+                if self.exists(key):
                     refresh = self.refresh_watchpost(key, rssis_list[key])
                     if refresh:
                         print("\tatualizado\n\t", refresh.__dict__)
                 else:
-                    raise Exception("'%s' not in watchposts" % key)
+                    raise Exception("Warning: '%s' not in watchposts" % key)
         except Exception as e:
             print('process refresh watchpost', e)
 
@@ -176,7 +225,7 @@ class WatchpostManager:
         :return: int com id do watchpost ou None
         """
         try:
-            assert eddy_namespace in self.watchposts, "'%s' not in watchposts" % eddy_namespace
+            assert self.exists(eddy_namespace), "'%s' not in watchposts" % eddy_namespace
 
             warning_item = None
             watchpost = self.watchposts[eddy_namespace]

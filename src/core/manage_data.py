@@ -1,4 +1,3 @@
-from beacons.manage_data import BeaconManager
 from watchposts.manage_data import WatchpostManager
 from pubsub.pubsub import PubSubManager
 
@@ -17,7 +16,17 @@ class Core(WatchpostManager, PubSubManager):
         print('\t... Iniciando processamento de mensagem recebida')
         messages = self.messages_received.copy()
         self.messages_received.clear()
-        print('pub sub messages --->', messages)
+
+        for message in messages:
+            print("\t... Processando mensagem {}".format(message))
+            if message.operation == "add":
+                if not self.exists(message.eddy_namespace):
+                    add = self.add_watchpost(message)
+                    if not add:
+                        print("Warning: Problema ao adicionar os dados da mensagem {}".format(message.eddy_namespace))
+            elif message.operation == "rm":
+                self.beacon_manager.remove_allowed_beacons(message.eddy_namespace)
+                self.set_remove_watchpost_status(message.eddy_namespace)
 
     def execute(self):
         """
