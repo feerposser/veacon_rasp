@@ -35,8 +35,9 @@ class Message:
                 self.gateway_id = message["gateway_id"]
 
             print(self.__str__())
-        print("Errrrooooo")
-        raise MessageReceivedException("Mensagem inválida")
+        else:
+            print("Errrrooooo")
+            raise MessageReceivedException("Mensagem inválida")
 
     @staticmethod
     def is_valid(message):
