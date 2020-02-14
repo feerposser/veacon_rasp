@@ -95,7 +95,6 @@ class BeaconManager:
         scanner.stop()
 
     def beacon_process(self):
-        assert self.allowed_beacons, "allowed_beacons must be initialize to run this function"
 
         self.scanned_beacons.clear()
         self.read_ble()

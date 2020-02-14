@@ -269,10 +269,13 @@ class WatchpostManager:
     def watchpost_manager_process(self):
         """ Centraliza o processo de regra de negócio"""
 
-        rssis_list = self.beacon_manager.beacon_process()
+        if self.watchposts:
+            rssis_list = self.beacon_manager.beacon_process()
 
-        print('---->\n', rssis_list)
+            print('---->\n', rssis_list)
 
-        self.process_refresh_watchpost(rssis_list)
+            self.process_refresh_watchpost(rssis_list)
 
-        self.process_validate_read_beacon()
+            self.process_validate_read_beacon()
+        else:
+            print("\t... Nenhum monitoramento para analisar")
