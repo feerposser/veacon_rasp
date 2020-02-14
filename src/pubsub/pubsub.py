@@ -21,7 +21,7 @@ class Message:
         if self.is_valid(message):
             self.id = message["id"]
             self.eddy_namespace = message["eddy_namespace"]
-            self.operation = message["operation"]
+            self.status = None
 
             self.sender = None
             self.content = None
@@ -44,11 +44,9 @@ class Message:
         try:
             assert "id" in message, "'id' not in message"
             assert "eddy_namespace" in message, "'eddy_namespace' not in message"
-            assert "operation" in message, "'operation' not in message"
-            assert message["operation"] == "add" or \
-                   message["operation"] == "rm" or \
-                   message["operation"] == "proc", \
-                "'add' 'rm' or 'proc' not in message. {} instead".format(message["operation"])
+            assert "status" in message, "'status' not in message"
+            assert message['status'] in ("A", "I", "P"), \
+                "'status' must be equals to 'A' or 'I' or 'P'. {} instead".format(message['status'])
 
             return True
         except AssertionError as a:
@@ -58,7 +56,7 @@ class Message:
             print("Warning:", e)
 
     def __str__(self):
-        return self.eddy_namespace + ": " + self.operation
+        return self.eddy_namespace + ": " + self.status
 
 
 class PubSubManager(SubscribeCallback):
@@ -78,8 +76,6 @@ class PubSubManager(SubscribeCallback):
             message = message.message
             self.messages_received.append(Message(message))
             print("mensagem recebida!")
-            import time
-            time.sleep(10)
         except MessageReceivedException as m:
             print(m)
         except AssertionError as a:

@@ -19,13 +19,13 @@ class Core(WatchpostManager, PubSubManager):
 
         for message in messages:
             print("\t... Mensagem para {}. Operação {}".format(message.eddy_namespace, message.operation))
-            if message.operation == "add":
+            if message.status == "P":
                 if not self.exists(message.eddy_namespace):
                     add = self.add_watchpost(message.__dict__)
                     if not add:
                         print("Warning: Problema ao adicionar os dados da mensagem {}".format(message.eddy_namespace))
                     print('add:', add)
-            elif message.operation == "rm":
+            elif message.operation == "I":
                 self.beacon_manager.remove_allowed_beacons(message.eddy_namespace)
                 self.set_remove_watchpost_status(message.eddy_namespace)
 

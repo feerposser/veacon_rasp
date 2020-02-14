@@ -1,8 +1,10 @@
 import statistics
 
 from core.exceptions import WatchpostException, RefreshMedianWatchpostException
-from .watchpost_server_request import WatchpostServerRequest
+from .watchpost_server_request import WatchpostServerRequest, AlertServerRequest
 from beacons.manage_data import BeaconManager
+
+WATCHPOST_STATUS_ALLOWED = ("P", "A", "I")
 
 
 class Watchpost:
@@ -51,7 +53,8 @@ class Watchpost:
 
     def change_status(self, status):
         try:
-            assert status == "A" or status == "rm", "status must be 'A' for 'rm'. {} instead".format(status)
+            assert status in WATCHPOST_STATUS_ALLOWED, \
+                "Warning: status must be 'P' or 'A' or 'I'. {} instead".format(status)
 
             self.status = status
         except Exception as e:
@@ -109,6 +112,8 @@ class WatchpostManager:
         try:
             assert 'id' in watchpost, "'id' not found"
             assert 'status' in watchpost, "'status' not found"
+            assert watchpost['status'] in WATCHPOST_STATUS_ALLOWED, \
+                "'status must be {}. {} instead".format(WATCHPOST_STATUS_ALLOWED, watchpost['status'])
             assert 'eddy_namespace' in watchpost, "eddy_namespace not fount in watchpost"
 
             id = watchpost['id']
@@ -151,11 +156,17 @@ class WatchpostManager:
             return None
 
     def set_remove_watchpost_status(self, eddy_namespace):
+        """
+        Seta o status do objeto Watchpost referente ao beacon (eddy_namespace) como 'I' para ser removido no
+        proximo refresh watchpost
+        :param eddy_namespace: str
+        :return: obj Watchpost removido ou None
+        """
         try:
             assert eddy_namespace in self.watchposts, "{} not in watchposts".format(eddy_namespace)
 
             watchpost = self.watchposts[eddy_namespace]
-            watchpost.status = "rm"
+            watchpost.change_status("I")
             return watchpost
         except AssertionError as a:
             print("set remove status", a)
@@ -172,7 +183,7 @@ class WatchpostManager:
         :return: objeto Watchpost atualizado ou None
         """
         try:
-            assert self.exists(eddy_namespace), "'%s' not in watchposts"
+            assert self.exists(eddy_namespace), "'{}' not in watchposts".format(eddy_namespace)
 
             print("...atualizando watchpost", eddy_namespace)
 
@@ -180,7 +191,7 @@ class WatchpostManager:
 
             if watchpost.status == "A":
                 watchpost.refresh_mediam_rssi(rssis_list)
-            elif watchpost.status == "proc":
+            elif watchpost.status == "P":
                 watchpost.set_near_far_rssi(rssis_list)
                 watchpost.refresh_mediam_rssi(rssis_list)
                 watchpost.status = "A"
@@ -188,7 +199,7 @@ class WatchpostManager:
                                                          rssi_near=watchpost.get_rssi_near(),
                                                          rssi_far=watchpost.get_rssi_far(),
                                                          status=watchpost.status)
-            elif watchpost.status == "rm":
+            elif watchpost.status == "I":
                 removed = self.remove_watchpost(watchpost.eddy_namespace)
                 if removed:
                     WatchpostServerRequest().patch_watchpost(id=removed.id, status=removed.status)
@@ -225,7 +236,7 @@ class WatchpostManager:
         :return: int com id do watchpost ou None
         """
         try:
-            assert self.exists(eddy_namespace), "'%s' not in watchposts" % eddy_namespace
+            assert self.exists(eddy_namespace), "'{}' not in watchposts".format(eddy_namespace)
 
             warning_item = None
             watchpost = self.watchposts[eddy_namespace]
@@ -235,7 +246,7 @@ class WatchpostManager:
                 warning_item = watchpost.id
 
                 if send_warning:
-                    WatchpostServerRequest().post_alert(warning_item)
+                    AlertServerRequest().post_alert(warning_item)
             else:
                 print("\t...Sem alerta de monitoramento para '%s'" % watchpost.eddy_namespace)
             return warning_item
