@@ -109,7 +109,7 @@ class WatchpostManager:
         try:
             assert 'id' in watchpost, "'id' not found"
             assert 'status' in watchpost, "'status' not found"
-            assert 'eddy_namespace' in watchpost['beacon'], "eddy_namespace not fount in watchpost"
+            assert 'eddy_namespace' in watchpost, "eddy_namespace not fount in watchpost"
 
             id = watchpost['id']
             status = watchpost['status']

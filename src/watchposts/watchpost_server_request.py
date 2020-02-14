@@ -2,7 +2,6 @@ import requests
 
 from server_request.server_request import BaseRequest
 from settings import BEACON_GATEWAY_ID
-from .manage_data import Watchpost
 
 
 class WatchpostServerRequest(BaseRequest):
