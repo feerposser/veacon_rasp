@@ -21,7 +21,7 @@ class Message:
         if self.is_valid(message):
             self.id = message["id"]
             self.eddy_namespace = message["eddy_namespace"]
-            self.status = None
+            self.status = message['status']
 
             self.sender = None
             self.content = None
