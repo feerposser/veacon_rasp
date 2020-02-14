@@ -45,7 +45,7 @@ class WatchpostServerRequest(BaseRequest):
     def patch_watchpost(self, **kwargs):
         """ Envia uma atualização para o watchpost que mudou de status proc para A no rasp"""
         try:
-            print("\t... Enviando patch para servidor: {}".format(kwargs))
+            print("\t\n\n... Enviando patch para servidor: {}\n\n".format(kwargs))
 
             r = requests.patch(self.IP_SERVER+'watchpost/{}'.format(id), headers=self.AUTH, data=kwargs)
 
