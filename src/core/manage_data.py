@@ -21,7 +21,7 @@ class Core(WatchpostManager, PubSubManager):
             print("\t... Mensagem para {}. Operação {}".format(message.eddy_namespace, message.operation))
             if message.operation == "add":
                 if not self.exists(message.eddy_namespace):
-                    add = self.add_watchpost(message)
+                    add = self.add_watchpost(message.__dict__)
                     if not add:
                         print("Warning: Problema ao adicionar os dados da mensagem {}".format(message.eddy_namespace))
                     print('add:', add)
