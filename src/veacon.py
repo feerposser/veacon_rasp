@@ -1,4 +1,4 @@
-import sys
+import time
 
 from core.manage_data import Core
 
@@ -8,11 +8,14 @@ if __name__ == "__main__":
     print("...Iniciando...")
     core = Core()
     count = 1
+    wait = 10
     while True:
         print("Iniciando sequencia #{}".format(count))
         core.execute()
         if sys_exit:
             break
         print("Encerrando sequencia#{}".format(count))
+        print("sleep {}'s".format(wait))
+        time.sleep(wait)
         count += 1
     print("...Encerrando...")
