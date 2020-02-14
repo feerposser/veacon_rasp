@@ -22,6 +22,7 @@ class Core(WatchpostManager, PubSubManager):
             if message.status == "P":
                 if not self.exists(message.eddy_namespace):
                     add = self.add_watchpost(message.__dict__)
+                    self.beacon_manager.insert_allowed_beacon(message.eddy_namespace)
                     if not add:
                         print("Warning: Problema ao adicionar os dados da mensagem {}".format(message.eddy_namespace))
                     print('add:', add)
