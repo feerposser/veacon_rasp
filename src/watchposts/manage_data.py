@@ -70,7 +70,7 @@ class Watchpost:
 
     def rssi_comparation(self):
         """
-        Compara a rssi mediana com o near e far rssi. Verifica se a mediana não é maior que o mais próximo nem menor
+        Compara a rssi mediana com o near e far rssi. Verifica se a mediana não é menor que o mais próximo nem menor
         que o mais distante.
         O rssi é medido através de números negativos. Quanto mais próximo a 0 mais perto se está do beacon.
         Se a mediana for maior (mais positivo) do que o rssi mais próximo encontrado no scaneamento, ou, ainda,
@@ -78,7 +78,7 @@ class Watchpost:
         :return: True ou False
         """
         if self.status == "A":
-            if self._rssi_near < self.rssi_median or self.rssi_median > self._rssi_far:
+            if self._rssi_near > self.rssi_median > self._rssi_far:
                 return True
             return False
         raise WatchpostException("state must be 'A' not '%s' for run this method" % self.status)
@@ -87,10 +87,8 @@ class Watchpost:
 class WatchpostManager:
 
     def __init__(self):
-        """
-        Inicia buscando monitoramentos cadastrados no sistema e cria um dicionário que armazena as informações
-        dos dados que o rasp está monitorando
-        """
+        """ Inicia buscando monitoramentos cadastrados no sistema e cria um dicionário que armazena as informações
+        dos dados que o rasp está monitorando """
         print("\t... Iniciando Watchpost Manager")
         self.watchposts = {}
         watchposts = WatchpostServerRequest().get_watchposts(add_watchpost_format=True,
@@ -180,7 +178,11 @@ class WatchpostManager:
 
     def refresh_watchpost(self, eddy_namespace, rssis_list):
         """
-        atualiza os dados do watchpost (mediana do rssi)
+        Atualiza o objeto Watchpost através de seu status.
+        A: Ativo. Atualiza a mediana com o rssis list
+        P: Processando. Foi adicionado recentemente e ainda nao foi completamente setado calibrado.
+        Ira buscar os dados de rssis para setar o near, far e mediam. Depois envia um patch ao Sys
+        I: Invativo. Significa que
         :param eddy_namespace: nome do beacon rastreado
         :param rssis_list: lista de rssis coletados
         :return: objeto Watchpost atualizado ou None
@@ -225,7 +227,7 @@ class WatchpostManager:
                 if self.exists(key):
                     refresh = self.refresh_watchpost(key, rssis_list[key])
                     if refresh:
-                        print("\tatualizado\n\t", refresh.__dict__)
+                        print("\tatualizado\n\t{}\n\tstatus {}".format(refresh.eddy_namespace, refresh.status))
                 else:
                     raise Exception("Warning: '%s' not in watchposts" % key)
         except Exception as e:
@@ -244,7 +246,7 @@ class WatchpostManager:
             warning_item = None
             watchpost = self.watchposts[eddy_namespace]
 
-            if watchpost.rssi_comparation():
+            if not watchpost.rssi_comparation():
                 print("\t...Alerta de monitoramento para '%s'" % watchpost.eddy_namespace)
                 warning_item = watchpost.id
 

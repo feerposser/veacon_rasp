@@ -15,6 +15,8 @@ class WatchpostServerRequest(BaseRequest):
         try:
             url = self.create_url('watchpost', kwargs)
 
+            print(url)
+
             r = requests.get(url=url, headers=self.AUTH)
 
             if self.is_valid(r):

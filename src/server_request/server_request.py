@@ -22,7 +22,6 @@ class BaseRequest:
                     query_string += "{}={}".format(key, str(kwargs[key]))
             url += query_string
 
-        print(url)
         return url
 
     @staticmethod
