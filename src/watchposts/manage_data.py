@@ -93,7 +93,9 @@ class WatchpostManager:
         """
         print("\t... Iniciando Watchpost Manager")
         self.watchposts = {}
-        watchposts = WatchpostServerRequest().get_watchposts(add_watchpost_format=True, gateway_id=BEACON_GATEWAY_ID)
+        watchposts = WatchpostServerRequest().get_watchposts(add_watchpost_format=True,
+                                                             gateway_id=BEACON_GATEWAY_ID,
+                                                             status="A")
         for watchpost in watchposts:
             self.add_watchpost(watchpost)
 
