@@ -33,6 +33,9 @@ class Message:
                 self.content = message["content"]
             if "gateway_id" in message:
                 self.gateway_id = message["gateway_id"]
+
+            print(self.__str__())
+        print("Errrrooooo")
         raise MessageReceivedException("Mensagem inválida")
 
     @staticmethod
@@ -71,6 +74,9 @@ class PubSubManager(SubscribeCallback):
         try:
             message = message.message
             self.messages_received.append(Message(message))
+            print("mensagem recebida!")
+            import time
+            time.sleep(10)
         except MessageReceivedException as m:
             print(m)
         except AssertionError as a:
