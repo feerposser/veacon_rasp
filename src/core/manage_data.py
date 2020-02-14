@@ -18,7 +18,7 @@ class Core(WatchpostManager, PubSubManager):
         self.messages_received.clear()
 
         for message in messages:
-            print("\t... Mensagem para {}. Operação {}".format(message.eddy_namespace, message.operation))
+            print("\t... Mensagem para {}. Status {}".format(message.eddy_namespace, message.status))
             if message.status == "P":
                 if not self.exists(message.eddy_namespace):
                     add = self.add_watchpost(message.__dict__)
