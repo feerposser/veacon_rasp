@@ -10,6 +10,21 @@ class BaseRequest:
         self.AUTH = {'Authorization': "Token "+TOKEN}
         self.IP_SERVER = IP_SERVER
 
+    def create_url(self, resource, kwargs=None):
+        url = self.IP_SERVER+resource+'/'
+
+        if kwargs:
+            query_string = "?"
+            for index, key in enumerate(kwargs):
+                if index != 0:
+                    query_string += "&{}={}".format(key, str(kwargs[key]))
+                else:
+                    query_string += "{}={}".format(key, str(kwargs[key]))
+            url += query_string
+
+        print(url)
+        return url
+
     @staticmethod
     def is_valid(r):
         try:

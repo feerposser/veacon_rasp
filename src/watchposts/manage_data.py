@@ -3,6 +3,7 @@ import statistics
 from core.exceptions import WatchpostException, RefreshMedianWatchpostException
 from .watchpost_server_request import WatchpostServerRequest, AlertServerRequest
 from beacons.manage_data import BeaconManager
+from settings import BEACON_GATEWAY_ID
 
 WATCHPOST_STATUS_ALLOWED = ("P", "A", "I")
 
@@ -92,7 +93,7 @@ class WatchpostManager:
         """
         print("\t... Iniciando Watchpost Manager")
         self.watchposts = {}
-        watchposts = WatchpostServerRequest().get_watchposts(add_watchpost_format=True)
+        watchposts = WatchpostServerRequest().get_watchposts(add_watchpost_format=True, gateway_id=BEACON_GATEWAY_ID)
         for watchpost in watchposts:
             self.add_watchpost(watchpost)
 

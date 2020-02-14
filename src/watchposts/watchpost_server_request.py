@@ -6,14 +6,17 @@ from settings import BEACON_GATEWAY_ID
 
 class WatchpostServerRequest(BaseRequest):
 
-    def get_watchposts(self, add_watchpost_format=False):
+    def get_watchposts(self, add_watchpost_format=False, **kwargs):
         """
         Não me orgulho desse método. Retorna os dados de monitoramento ativo do sistema.
         :param add_watchpost_format: Bool. Indica se deve estar formatado ou não
         :return: list
         """
         try:
-            r = requests.get(self.IP_SERVER+'watchpost', headers=self.AUTH)
+            url = self.create_url('watchpost', kwargs)
+
+            r = requests.get(url=url, headers=self.AUTH)
+
             if self.is_valid(r):
                 if add_watchpost_format:
                     data = []
@@ -25,31 +28,22 @@ class WatchpostServerRequest(BaseRequest):
                                      'rssi_far': item['rssi_far']})
                     return data
                 return r.json()
+
             raise Exception("data returned is not valid. {}".format(r.content))
         except Exception as e:
             print('server request get watchposts', e)
             return []
 
-    def get_watchposts_gateway_beacon(self):
-        """
-        Retorna monitoramentos (watchposts) cadastrados neste gateway
-        :return:
-        """
-        r = requests.get(self.IP_SERVER+'watchpost_gateway/?gateway_beacon_id=%s' % BEACON_GATEWAY_ID,
-                         header=self.AUTH)
-
-        if self.is_valid(r):
-            return r.json()
-        return None
-
     def patch_watchpost(self, **kwargs):
-        """ Envia uma atualização para o watchpost que mudou de status proc para A no rasp"""
+        """ Envia uma atualização para o watchpost que mudou de status proc para A no rasp """
         try:
             id = kwargs.pop("id")
 
             print("\t\n\n... Enviando patch id {} para servidor: {}\n\n".format(id, kwargs))
 
-            r = requests.patch(self.IP_SERVER+'watchpost/{}/'.format(id), headers=self.AUTH, data=kwargs)
+            url = self.create_url('watchpost')
+
+            r = requests.patch(url=url+'{}/'.format(id), headers=self.AUTH, data=kwargs)
 
             if r.status_code == 200:
                 print("\t... Status enviado")
@@ -57,7 +51,7 @@ class WatchpostServerRequest(BaseRequest):
             print("warning: problema no status = {}".format(r.status_code))
             return False
         except Exception as e:
-            print(e)
+            print("patch watchpost", e)
 
 
 class AlertServerRequest(BaseRequest):
