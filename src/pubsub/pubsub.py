@@ -53,6 +53,8 @@ class Message:
         except AssertionError as a:
             print('Warning: Message is not valid.', a)
             return False
+        except Exception as e:
+            print("Warning:", e)
 
     def __str__(self):
         return self.eddy_namespace + ": " + self.operation
