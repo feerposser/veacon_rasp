@@ -41,7 +41,6 @@ class BeaconManager:
         :return: Beacon removido ou None
         """
         try:
-            print('aqui::::', eddy_namespace)
             self.allowed_beacons.remove(eddy_namespace)
             return eddy_namespace
         except ValueError as v:
@@ -96,6 +95,10 @@ class BeaconManager:
         scanner.stop()
 
     def beacon_process(self):
+        """
+        Se existirem beacons permitidos para escaneamento, faz a leitura dos beacons e retorna os dados
+        :return: dict{"eddy_namespace": [rssi,] ou None
+        """
 
         self.scanned_beacons.clear()
         self.read_ble()

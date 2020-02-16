@@ -274,7 +274,7 @@ class WatchpostManager:
     def watchpost_manager_process(self):
         """ Centraliza o processo de regra de negócio"""
 
-        if self.watchposts:
+        if self.watchposts and self.beacon_manager.allowed_beacons:
             rssis_list = self.beacon_manager.beacon_process()
 
             print('---->\n', rssis_list)
