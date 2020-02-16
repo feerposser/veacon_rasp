@@ -213,7 +213,6 @@ class WatchpostManager:
                 removed = self.remove_watchpost(watchpost.eddy_namespace)
                 if removed:
                     self.beacon_manager.remove_allowed_beacons(removed.eddy_namespace)
-                    WatchpostServerRequest().patch_watchpost(id=removed.id, status=removed.status)
                     return removed
 
             raise RefreshWatchpostException("Erro desconhecido")
@@ -233,7 +232,8 @@ class WatchpostManager:
                 if eddy_namespace in rssis_list:
                     refresh = self.refresh_watchpost(eddy_namespace, rssis_list[eddy_namespace])
                     if refresh:
-                        print("\t...atualizado\n\t{}\n\tstatus {}".format(refresh.eddy_namespace, refresh.status))
+                        print("\t...atualizado\n\teddy_namespace{}\n\tstatus {}".format(refresh.eddy_namespace,
+                                                                                        refresh.status))
                 else:
                     print('\t...warning: {} não está na lista de rssis'.format(eddy_namespace))
         except Exception as e:
@@ -280,7 +280,7 @@ class WatchpostManager:
         if self.watchposts:
             rssis_list = self.beacon_manager.beacon_process()
 
-            print('---->\n', rssis_list)
+            print('---->', rssis_list)
 
             if rssis_list:
                 self.process_refresh_watchpost(rssis_list)
