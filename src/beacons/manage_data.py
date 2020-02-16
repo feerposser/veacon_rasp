@@ -1,6 +1,7 @@
 import time
 from beacontools import BeaconScanner, EddystoneUIDFrame
 
+from core.exceptions import BeaconAlreadyInAllowedBeaconsException
 
 class BeaconManager:
 
@@ -27,11 +28,12 @@ class BeaconManager:
         """
         Adiciona um novo beacon à lista de beacons permitidos
         :param eddy_namespace: uuid do beacon
-        :return:
+        :return: str ou BeaconAlreadyInAllowedBeaconsException
         """
         if eddy_namespace not in self.allowed_beacons:
             self.allowed_beacons.append(eddy_namespace)
-        return self.allowed_beacons
+            return self.allowed_beacons[len(self.allowed_beacons)-1]
+        raise BeaconAlreadyInAllowedBeaconsException("{} already in allowed beacons".format(eddy_namespace))
 
     def remove_allowed_beacons(self, eddy_namespace):
         """

@@ -1,7 +1,8 @@
 from watchposts.manage_data import WatchpostManager
 from pubsub.pubsub import PubSubManager
 
-import time
+from .exceptions import WatchpostAlreadyExistsException, StatusNotAcceptable, BeaconAlreadyInAllowedBeaconsException, \
+    AddWatchpostException
 
 
 class Core(WatchpostManager, PubSubManager):
@@ -13,28 +14,38 @@ class Core(WatchpostManager, PubSubManager):
         PubSubManager.__init__(self)
 
     def process_messages(self):
-        print('\t... Iniciando processamento de mensagem recebida')
-        messages = self.messages_received.copy()
-        self.messages_received.clear()
+        try:
+            print('\t... Iniciando processamento de mensagem recebida')
+            messages = self.messages_received.copy()
+            self.messages_received.clear()
 
-        for message in messages:
-            print("\t... Mensagem para {}. Status {}".format(message.eddy_namespace, message.status))
+            for message in messages:
+                print("\t... Mensagem de {}. Status {}".format(message.eddy_namespace, message.status))
 
-            if message.status == "P":
-                if not self.exists(message.eddy_namespace):
-                    self.beacon_manager.insert_allowed_beacon(message.eddy_namespace)
-                    add = self.add_watchpost(message.__dict__)
-                    if add is None:
-                        print("Warning: Problema ao adicionar os dados da mensagem {}".format(message.eddy_namespace))
-                        self.beacon_manager.remove_allowed_beacons(message.eddy_namespace)
-                    else:
+                if message.status == "P":
+                    if not self.exists(message.eddy_namespace):
+                        self.beacon_manager.insert_allowed_beacon(message.eddy_namespace)
+                        add = self.add_watchpost(message.__dict__)
                         print('add:', add)
+                    else:
+                        raise WatchpostAlreadyExistsException(
+                            "{} já está sendo monitorado".format(message.eddy_namespace))
+                elif message.status == "I":
+                    if self.exists(message.eddy_namespace):
+                        print("setando remoção de {}".format(message.eddy_namespace))
+                        self.beacon_manager.remove_allowed_beacons(message.eddy_namespace)
+                        self.set_remove_watchpost_status(message.eddy_namespace)
+                else:
+                    raise StatusNotAcceptable("status must be 'I' or 'P'. {} instead.".format(message.status))
 
-            elif message.status == "I":
-                if self.exists(message.eddy_namespace):
-                    print("setando remoção de {}".format(message.eddy_namespace))
-                    self.beacon_manager.remove_allowed_beacons(message.eddy_namespace)
-                    self.set_remove_watchpost_status(message.eddy_namespace)
+        except AddWatchpostException as a:
+            print('process messages', a)
+        except WatchpostAlreadyExistsException as w:
+            print('process messages', w)
+        except StatusNotAcceptable as s:
+            print('process messages', s)
+        except BeaconAlreadyInAllowedBeaconsException as b:
+            print('process messages', b)
 
     def execute(self):
         """ Executa as funções centralizadas de regra de negócio do projeto.

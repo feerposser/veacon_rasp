@@ -1,6 +1,7 @@
 import statistics
 
-from core.exceptions import WatchpostException, RefreshMedianWatchpostException
+from core.exceptions import WatchpostException, RefreshMedianWatchpostException, WatchpostAlreadyExistsException, \
+    AddWatchpostException
 from .watchpost_server_request import WatchpostServerRequest, AlertServerRequest
 from beacons.manage_data import BeaconManager
 from settings import BEACON_GATEWAY_ID
@@ -121,7 +122,8 @@ class WatchpostManager:
             status = watchpost['status']
             eddy_namespace = watchpost['eddy_namespace']
 
-            assert not self.exists(eddy_namespace), "'%s' already in watchposts list" % eddy_namespace
+            if not self.exists(eddy_namespace):
+                raise WatchpostAlreadyExistsException("'%s' already in watchposts list" % eddy_namespace)
 
             if 'rssi_near' in watchpost and 'rssi_far' in watchpost:
                 rssi_near, rssi_far = watchpost['rssi_near'], watchpost['rssi_far']
@@ -129,14 +131,18 @@ class WatchpostManager:
             else:
                 self.watchposts[eddy_namespace] = Watchpost(id, eddy_namespace, status)
 
+            print("Monitoramento adicionado:", self.watchposts[eddy_namespace])
             return self.watchposts[eddy_namespace]
 
+        except WatchpostAlreadyExistsException as w:
+            print('add watchpost', w)
+            raise AddWatchpostException(w.__str__())
         except AssertionError as a:
             print('add watchpost', a)
-            return None
+            raise AddWatchpostException(a.__str__())
         except Exception as e:
             print('add watchpost', e)
-            return None
+            raise AddWatchpostException(e.__str__())
 
     def remove_watchpost(self, eddy_namespace):
         """
