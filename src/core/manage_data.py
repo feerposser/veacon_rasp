@@ -23,6 +23,10 @@ class Core(WatchpostManager, PubSubManager):
                 print("\t... Mensagem de {}. Status {}".format(message.eddy_namespace, message.status))
 
                 if message.status == "P":
+                    print('caiu no P')
+                    print('EXISTS:', self.exists(message.eddy_namespace))
+                    print('Watchposts', self.watchposts, 'keys', self.watchposts.keys())
+                    
                     if not self.exists(message.eddy_namespace):
                         self.beacon_manager.insert_allowed_beacon(message.eddy_namespace)
                         add = self.add_watchpost(message.__dict__)
