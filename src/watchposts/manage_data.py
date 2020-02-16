@@ -122,7 +122,7 @@ class WatchpostManager:
             status = watchpost['status']
             eddy_namespace = watchpost['eddy_namespace']
 
-            if not self.exists(eddy_namespace):
+            if self.exists(eddy_namespace):
                 raise WatchpostAlreadyExistsException("'%s' already in watchposts list" % eddy_namespace)
 
             if 'rssi_near' in watchpost and 'rssi_far' in watchpost:
