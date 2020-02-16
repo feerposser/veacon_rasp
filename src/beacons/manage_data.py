@@ -44,10 +44,10 @@ class BeaconManager:
             self.allowed_beacons.remove(eddy_namespace)
             return eddy_namespace
         except ValueError as v:
-            print(v)
+            print('remove allowed beacon', v)
             return None
         except Exception as e:
-            print(e)
+            print('remove allowed beacon', e)
             return None
 
     def create_beacon_rssis(self):
