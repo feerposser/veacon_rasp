@@ -23,28 +23,26 @@ class Core(WatchpostManager, PubSubManager):
                 print("\t... Mensagem de {}. Status {}".format(message.eddy_namespace, message.status))
 
                 if message.status == "P":
-                    print('caiu no P')
-                    print('EXISTS:', self.exists(message.eddy_namespace))
-                    print('Watchposts', self.watchposts, 'keys', self.watchposts.keys())
+                    try:
+                        if not self.exists(message.eddy_namespace):
+                            self.beacon_manager.insert_allowed_beacon(message.eddy_namespace)
+                            self.add_watchpost(message.__dict__)
+                        else:
+                            raise WatchpostAlreadyExistsException(
+                                "{} já está sendo monitorado".format(message.eddy_namespace))
+                    except AddWatchpostException as a:
+                        print('process messages', a)
+                        self.beacon_manager.remove_allowed_beacons(message.eddy_namespace)
 
-                    if not self.exists(message.eddy_namespace):
-                        self.beacon_manager.insert_allowed_beacon(message.eddy_namespace)
-                        add = self.add_watchpost(message.__dict__)
-                        print('add:', add)
-                    else:
-                        raise WatchpostAlreadyExistsException(
-                            "{} já está sendo monitorado".format(message.eddy_namespace))
                 elif message.status == "I":
                     if self.exists(message.eddy_namespace):
-                        print("setando remoção de {}".format(message.eddy_namespace))
+                        print("\t... setando remoção de {}".format(message.eddy_namespace))
                         self.set_remove_watchpost_status(message.eddy_namespace)
                 else:
                     raise StatusNotAcceptable("status must be 'I' or 'P'. {} instead.".format(message.status))
 
-        except AddWatchpostException as a:
-            print('process messages', a)
         except WatchpostAlreadyExistsException as w:
-            print('process messages', w)
+            print("process messages", w)
         except StatusNotAcceptable as s:
             print('process messages', s)
         except BeaconAlreadyInAllowedBeaconsException as b:

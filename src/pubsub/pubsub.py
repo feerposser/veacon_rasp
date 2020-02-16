@@ -1,6 +1,7 @@
 from pubnub.callbacks import SubscribeCallback
 from pubnub.pnconfiguration import PNConfiguration
 from pubnub.pubnub import PubNub
+from abc import abstractmethod
 
 from settings import PUBNUB_PUBLISH_KEY as PUBLISH_KEY, PUBNUB_SUBSCRIBE_KEY as SUBSCRIBE_KEY, BEACON_GATEWAY_ID
 from core.exceptions import MessageReceivedException
@@ -36,7 +37,6 @@ class Message:
 
             print(self.__str__())
         else:
-            print("Errrrooooo")
             raise MessageReceivedException("Mensagem inválida")
 
     @staticmethod
@@ -45,8 +45,8 @@ class Message:
             assert "id" in message, "'id' not in message"
             assert "eddy_namespace" in message, "'eddy_namespace' not in message"
             assert "status" in message, "'status' not in message"
-            assert message['status'] in ("A", "I", "P"), \
-                "'status' must be equals to 'A' or 'I' or 'P'. {} instead".format(message['status'])
+            assert message['status'] in ("I", "P"), \
+                "'status' must be equals to 'I' or 'P'. {} instead".format(message['status'])
 
             return True
         except AssertionError as a:
@@ -54,6 +54,7 @@ class Message:
             return False
         except Exception as e:
             print("Warning:", e)
+            return False
 
     def __str__(self):
         return self.eddy_namespace + ": " + self.status
@@ -82,6 +83,11 @@ class PubSubManager(SubscribeCallback):
             print(a)
         except Exception as e:
             print(e)
+
+    @abstractmethod
+    def process_messages(self):
+        """ processa a mensagem recebida """
+        pass
 
 
 pubnub.add_listener(PubSubManager())

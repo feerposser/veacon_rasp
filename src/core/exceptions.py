@@ -24,10 +24,17 @@ class WatchpostAlreadyExistsException(Exception):
     """ Erro gerado ao tentar adicionar um monitoramento já existente """
     pass
 
+
 class StatusNotAcceptable(Exception):
     """ Erro gerado quando um status não é válido """
     pass
 
+
 class BeaconAlreadyInAllowedBeaconsException(Exception):
     """ Erro gerado quando um beacon já existente tenta ser inserido na lista allowed_beacons """
+    pass
+
+
+class RefreshWatchpostException(Exception):
+    """ Erro gerado ao atualizar o monitoramento """
     pass

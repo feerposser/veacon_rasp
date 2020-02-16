@@ -1,7 +1,6 @@
 import time
 from beacontools import BeaconScanner, EddystoneUIDFrame
 
-from core.exceptions import BeaconAlreadyInAllowedBeaconsException
 
 class BeaconManager:
 
@@ -33,7 +32,6 @@ class BeaconManager:
         if eddy_namespace not in self.allowed_beacons:
             self.allowed_beacons.append(eddy_namespace)
             return self.allowed_beacons[len(self.allowed_beacons)-1]
-        raise BeaconAlreadyInAllowedBeaconsException("{} already in allowed beacons".format(eddy_namespace))
 
     def remove_allowed_beacons(self, eddy_namespace):
         """
@@ -101,7 +99,8 @@ class BeaconManager:
         Se existirem beacons permitidos para escaneamento, faz a leitura dos beacons e retorna os dados
         :return: dict{"eddy_namespace": [rssi,] ou None
         """
-
-        self.scanned_beacons.clear()
-        self.read_ble()
-        return self.create_beacon_rssis()
+        if self.allowed_beacons:
+            self.scanned_beacons.clear()
+            self.read_ble()
+            return self.create_beacon_rssis()
+        return None

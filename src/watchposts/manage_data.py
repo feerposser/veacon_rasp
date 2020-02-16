@@ -1,12 +1,12 @@
 import statistics
 
 from core.exceptions import WatchpostException, RefreshMedianWatchpostException, WatchpostAlreadyExistsException, \
-    AddWatchpostException
+    AddWatchpostException, RefreshWatchpostException
 from .watchpost_server_request import WatchpostServerRequest, AlertServerRequest
 from beacons.manage_data import BeaconManager
 from settings import BEACON_GATEWAY_ID
 
-WATCHPOST_STATUS_ALLOWED = ("P", "A", "I")
+WATCHPOST_STATUS_ALLOWED = ("P", "I")
 
 
 class Watchpost:
@@ -148,19 +148,16 @@ class WatchpostManager:
         """
         remove um item do dicionario de monitoramento
         :param eddy_namespace: nome do beacon que está sendo monitorado
-        :return: valor do item monitorado ou None
+        :return: valor do item monitorado ou exception
         """
         try:
             assert self.exists(eddy_namespace), "'eddy_namespace' not in watchposts"
 
             removed = self.watchposts.pop(eddy_namespace)
             return removed
-        except AssertionError as a:
-            print(a)
-            return None
         except Exception as e:
             print(e)
-            return None
+            raise e
 
     def set_remove_watchpost_status(self, eddy_namespace):
         """
@@ -175,15 +172,13 @@ class WatchpostManager:
             watchpost = self.watchposts[eddy_namespace]
             watchpost.change_status("I")
             return watchpost
-        except AssertionError as a:
-            print("set remove status", a)
-            return None
         except Exception as e:
             print("set remove status", e)
             return None
 
     def refresh_watchpost(self, eddy_namespace, rssis_list):
         """
+        todo: o método de remoção não está claro. Nem precisaria de rssis_list para remover aqui.
         Atualiza o objeto Watchpost através de seu status.
         A: Ativo. Atualiza a mediana com o rssis list
         P: Processando. Foi adicionado recentemente e ainda nao foi completamente setado calibrado.
@@ -191,7 +186,7 @@ class WatchpostManager:
         I: Invativo. Significa que
         :param eddy_namespace: nome do beacon rastreado
         :param rssis_list: lista de rssis coletados
-        :return: objeto Watchpost atualizado ou None
+        :return: objeto Watchpost atualizado ou RefreshWatchpostException
         """
         try:
             assert self.exists(eddy_namespace), "'{}' not in watchposts".format(eddy_namespace)
@@ -202,6 +197,8 @@ class WatchpostManager:
 
             if watchpost.status == "A":
                 watchpost.refresh_mediam_rssi(rssis_list)
+                return watchpost
+
             elif watchpost.status == "P":
                 watchpost.set_near_far_rssi(rssis_list)
                 watchpost.refresh_mediam_rssi(rssis_list)
@@ -210,33 +207,35 @@ class WatchpostManager:
                                                          rssi_near=watchpost.get_rssi_near(),
                                                          rssi_far=watchpost.get_rssi_far(),
                                                          status=watchpost.status)
+                return watchpost
+
             elif watchpost.status == "I":
                 removed = self.remove_watchpost(watchpost.eddy_namespace)
                 if removed:
                     self.beacon_manager.remove_allowed_beacons(removed.eddy_namespace)
                     WatchpostServerRequest().patch_watchpost(id=removed.id, status=removed.status)
+                    return removed
 
-            return watchpost
+            raise RefreshWatchpostException("Erro desconhecido")
 
-        except AssertionError as a:
-            print("refresh watchpost", a)
-            return None
+        except Exception as e:
+            print('refresh watchpost', e)
+            raise RefreshWatchpostException(e.__str__())
 
     def process_refresh_watchpost(self, rssis_list):
         """
-        Itera sobre um dicionário {'edy_namespace': [rssis,]} e envia os dados de rssi para serem atualizados no objeto
-        watchpost.
+        Itera sobre os monitoramentos e usa os dados da rssis list para atualizar cada objeto de monitoramento
         :param rssis_list: dict {'edy_namespace': [rssis,]}
         :return: None ou Exception
         """
         try:
-            for key in rssis_list:
-                if self.exists(key):
-                    refresh = self.refresh_watchpost(key, rssis_list[key])
+            for eddy_namespace in self.watchposts.keys():
+                if eddy_namespace in rssis_list:
+                    refresh = self.refresh_watchpost(eddy_namespace, rssis_list[eddy_namespace])
                     if refresh:
-                        print("\tatualizado\n\t{}\n\tstatus {}".format(refresh.eddy_namespace, refresh.status))
+                        print("\t...atualizado\n\t{}\n\tstatus {}".format(refresh.eddy_namespace, refresh.status))
                 else:
-                    raise Exception("Warning: '%s' not in watchposts" % key)
+                    print('\t...warning: {} não está na lista de rssis'.format(eddy_namespace))
         except Exception as e:
             print('process refresh watchpost', e)
 
@@ -262,9 +261,6 @@ class WatchpostManager:
             else:
                 print("\t...Sem alerta de monitoramento para '%s'" % watchpost.eddy_namespace)
             return warning_item
-        except AssertionError as a:
-            print("validate read beacon", a)
-            return None
 
         except Exception as e:
             print("validate read beacon", e)
@@ -281,14 +277,15 @@ class WatchpostManager:
     def watchpost_manager_process(self):
         """ Centraliza o processo de regra de negócio"""
 
-
-        if self.watchposts and self.beacon_manager.allowed_beacons:
+        if self.watchposts:
             rssis_list = self.beacon_manager.beacon_process()
 
             print('---->\n', rssis_list)
 
-            self.process_refresh_watchpost(rssis_list)
-
-            self.process_validate_read_beacon()
+            if rssis_list:
+                self.process_refresh_watchpost(rssis_list)
+                self.process_validate_read_beacon()
+            else:
+                print("\t\nWarning: nenhuma leitura, mas existem monitoramentos\n")
         else:
             print("\t... Nenhum monitoramento para analisar")
