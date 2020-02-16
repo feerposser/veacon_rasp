@@ -26,7 +26,7 @@ class Core(WatchpostManager, PubSubManager):
                     print('caiu no P')
                     print('EXISTS:', self.exists(message.eddy_namespace))
                     print('Watchposts', self.watchposts, 'keys', self.watchposts.keys())
-                    
+
                     if not self.exists(message.eddy_namespace):
                         self.beacon_manager.insert_allowed_beacon(message.eddy_namespace)
                         add = self.add_watchpost(message.__dict__)
@@ -37,7 +37,6 @@ class Core(WatchpostManager, PubSubManager):
                 elif message.status == "I":
                     if self.exists(message.eddy_namespace):
                         print("setando remoção de {}".format(message.eddy_namespace))
-                        self.beacon_manager.remove_allowed_beacons(message.eddy_namespace)
                         self.set_remove_watchpost_status(message.eddy_namespace)
                 else:
                     raise StatusNotAcceptable("status must be 'I' or 'P'. {} instead.".format(message.status))
