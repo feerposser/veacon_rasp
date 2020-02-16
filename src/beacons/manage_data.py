@@ -41,6 +41,7 @@ class BeaconManager:
         :return: Beacon removido ou None
         """
         try:
+            print('aqui::::', eddy_namespace)
             self.allowed_beacons.remove(eddy_namespace)
             return eddy_namespace
         except ValueError as v:

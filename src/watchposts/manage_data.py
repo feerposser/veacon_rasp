@@ -97,7 +97,7 @@ class WatchpostManager:
         for watchpost in watchposts:
             self.add_watchpost(watchpost)
 
-        self.beacon_manager = BeaconManager(allowed_beacons=self.watchposts.keys())
+        self.beacon_manager = BeaconManager(allowed_beacons=[*self.watchposts.keys()])  # * para descompactar em lista
 
     def exists(self, eddy_namespace):
         if eddy_namespace in self.watchposts.keys():
