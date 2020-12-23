@@ -12,7 +12,6 @@ WATCHPOST_STATUS_ALLOWED = ("P", "I")
 class Watchpost:
 
     def __init__(self, id, eddy_namespace, status, near=None, far=None):
-
         self.id = id
         self.eddy_namespace = eddy_namespace
         self.status = status
@@ -223,19 +222,16 @@ class WatchpostManager:
 
     def process_refresh_watchpost(self, rssis_list):
         """
-        Itera sobre os monitoramentos e usa os dados da rssis list para atualizar cada objeto de monitoramento
+        Itera sobre os dados da rssis list para atualizar cada objeto de monitoramento
         :param rssis_list: dict {'edy_namespace': [rssis,]}
         :return: None ou Exception
         """
         try:
-            for eddy_namespace in self.watchposts.keys():
-                if eddy_namespace in rssis_list:
-                    refresh = self.refresh_watchpost(eddy_namespace, rssis_list[eddy_namespace])
-                    if refresh:
-                        print("\t...atualizado\n\teddy_namespace{}\n\tstatus {}".format(refresh.eddy_namespace,
-                                                                                        refresh.status))
-                else:
-                    print('\t...warning: {} não está na lista de rssis'.format(eddy_namespace))
+            for eddy_namespace in rssis_list:
+                refresh = self.refresh_watchpost(eddy_namespace, rssis_list[eddy_namespace])
+                if refresh:
+                    print("\t...atualizado\n\teddy_namespace{}\n\tstatus {}".format(refresh.eddy_namespace,
+                                                                                    refresh.status))
         except Exception as e:
             print('process refresh watchpost', e)
 
