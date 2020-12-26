@@ -26,8 +26,16 @@ class ReadBLE:
         return self.rssi_list
 
 
+<<<<<<< HEAD
 if __name__ == "__main__":
     loop_time = int(input("tempo: "))
     uuid = input("uuid: ")
     rssi_list = ReadBLE(loop_time, uuid).read_ble()
     print(uuid, "\n", *rssi_list)
+=======
+# if __name__ == "__main__":
+#     loop_time = int(input("tempo: "))
+#     uuid = input("uuid: ")
+#     rssi_list = ReadBLE(loop_time, uuid).read_ble()
+#     print(uuid, "\n", *rssi_list)
+>>>>>>> refs/remotes/origin/master
