@@ -31,4 +31,3 @@ if __name__ == "__main__":
     uuid = input("uuid: ")
     rssi_list = ReadBLE(loop_time, uuid).read_ble()
     print(uuid, "\n", *rssi_list)
-    
