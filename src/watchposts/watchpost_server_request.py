@@ -1,3 +1,5 @@
+from builtins import enumerate
+
 import requests
 
 from server_request.server_request import BaseRequest
@@ -64,11 +66,15 @@ class AlertServerRequest(BaseRequest):
         :param: watchpost_id: id do monitoramento
         :return: True se deu certo ou None
         """
-        print("sending warning for '%s' watchpost" % watchpost_id)
-        data = {'watchpost_fk': watchpost_id}
-        r = requests.post(self.IP_SERVER+'alert/', headers=self.AUTH, data=data)
+        try:
+            print("sending warning for '%s' watchpost" % watchpost_id)
+            data = {'watchpost_fk': watchpost_id}
+            r = requests.post(self.IP_SERVER+'alert/', headers=self.AUTH, data=data)
 
-        print(r.json())
-        if r.status_code == 200:
-            return True
-        return None
+            print(r.json())
+            if r.status_code == 200:
+                return True
+            return None
+        except Exception as e:
+            print("POST ALERT ERROR:", e)
+            return None

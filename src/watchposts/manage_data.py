@@ -277,6 +277,15 @@ class WatchpostManager:
                 # todo: o que fazer se foi enviado alerta? E se não for?
                 pass
 
+    def void_verification(self, rssis_list):
+        watchpost_keys = self.watchposts.keys()
+        rssis_readed_keys = rssis_list.keys()
+
+        for key in watchpost_keys:
+            if key not in rssis_readed_keys:
+                AlertServerRequest().post_alert(self.watchposts[key].id)
+                print("alerta de monitoramento para", key)
+
     def watchpost_manager_process(self):
         """ Centraliza o processo de regra de negócio"""
 
@@ -287,6 +296,7 @@ class WatchpostManager:
 
             if rssis_list:
                 self.process_refresh_watchpost(rssis_list)
+                self.void_verification(rssis_list)
                 self.process_validate_read_beacon()
             else:
                 print("\t\nWarning: nenhuma leitura, mas existem monitoramentos\n")
